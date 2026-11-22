@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"><meta name="MSRAI_Label_dbd012e0-e600-4c3e-83b7-7d3141c15efc_AI_Disclosure" content="Made with AI">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tour Guide">
+<meta name="theme-color" content="#0e7490">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAFmUlEQVR42u2dy44bRRSGq6MRS7bZ5caKsI6UhNwmmdyTIckkGV4CMkOfudjGg0QiEqQSQjwFWx4C9ggFyDDhsuQVsjELC8vg8WXsrvY5p75PZ5dJu/vU33/9XW53F2/L1wFgPxZCp0MXYF8O0QIY6hwFPQCcA6ZwDjIH4BxA5gCcA3AOmKM4AoEUcA4gcwDiAKYVIJACzgFkDsA5gMwBOAcAmQNwDsA5gEAKTCvAtAI4B+Ac4Nc5CKSAcwCZA3AOIHMAzgGIAwikRvgrbk3yZ0flyzz7UxwpX6CGA5GPVoqj5XP3B/ln3E6x2WPyAnEgi0wlUhxzKo4/0suin+MeJeJQHDXLwrFEiuOOxPH7/GTRzwkvEjkUQsdHKVHGvxr10NLiRPmFdYG/jg2dO/aOPLfuHCgjx32bSBxFCHZLf/dfx4bd9hrOHHtGzsu92DDaYavTyl5ssrdMK/uUxV7vxabFacUYv9k8Cy3uuTHnsKuMnj4IpElq17gyuuzGpplAakXFu7HlZpl/N7bIHGD8uxUTEn7lyDa6vLJgHgac41d3yrByXPxuZZ4ob7525/glfupYHMqPjkAKw43t3fKp2p37uZYT640cHvZPb8W/a9iBk/JMaebI9oFxIzQx+DeJVaJ0CIqT5ec69+xlbM9RFjUbyXui0b+zyxxTK2PG/2sRpYtgiWxj9tFNpI+Xsc0imFXPyNM/clkEq3ZE38jhyvOHwoHQ6Bw/xR3Nyki0zcqP2mfm0K+MRFsmcxieTXLLHyyfQ5aBtJ7TusJwqm0s1DnHj/GzbM9UbcfOE4x1oWo43GaOOqOi11iKc+Acw8XBO96UoWg4cA6cI7/MATgHzkHmIHPgHEDmABu4FUc9vyqo/7OYVphWtDiHrgeGnJKdbJVxSnZ4eEtNd4LV4/YVfgp3goGdQOr7HtLU5lHt9nEOP5ctXi9S+p2jo61OS1v/KFa+zdPS1jYQuWSOasfSvWfozRyFbn0kUga/lZ2UM9LWqY9Eykh0vN4WwfpKnX+knE1UvsbrTKn3gYc/xITPQzrQXcFJQ8ZZUfrYuIVsV3h64z33Z4KppThbqn5U6vfxme8BeF/0Pm2S5XMwtQjWX+ek5bj756Slufk4B1hbBOuv807N47y0eGtCNX30pwz9O8ltgnO6SjQxrVh539gFabpRxgVp8tLhFD31oQwCaYK6aFwfF8XYq0MBbC6CDdYlaRjt9SVp2Go1zgFeMke3Fg2ax6I0zPXZqnPY0seizamQRTCWvOwvgg3WZdk20eLLsm20wzgHtjHKOQxzRb15XDFib2QObCMn5wghLCk+NZcs24btQNqrJdlSqYwt641lWmFC8TutdLmqzDyuqjQzAim2QeYYqGuyqaSn12TTR0tNfvE2rK4r0Md12XTTT76yh+HTiifnKEK4MVfzuOHINnAOGOMcHWd1Uzbm0sqbsuGskzgHeF8EGzyJ3X8igXT6ulXjaN2SDZc9ZFqBnAJpr26L1NDB2yJeG4hzQH6Zo1t3EpvHHRHH3cM5IMvM0a27Uibq3V0pfbcuC+dIoY90mtMDN/tMSQ59yyVzLFd6oi9nYBuBQAqj3HG5XM/naL+LX82+kQ/kk1yuVrI6FWYf13yUQSAlh+Icfdyb4dS/l5Nt4BzYxhjn6ORW92WaDH5f1nNrFM6BbZA5/suDA5rHA1nPsEvOv7IfUSsTj/eKrOfZIlZIgUC6X63I2gS2sZZtfwik5FAC6RAejjSPhxNYC4HUcz0aooBHspZ5ZxZC6DB3DCH3zuAcoQjhsTz5X18eyxPawqUs4BzjarXPPFaxDZwDxlzGr5Yf0YUe38ZvPpSP6QPigDGwQgqskALigGqnFVZIAecAAingHEDmAJwDyByAcwDOAc7Fwc1wwLQCTCuAcwDOAQRSUMk/l/ib+A1NopAAAAAASUVORK5CYII=">
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAFmUlEQVR42u2dy44bRRSGq6MRS7bZ5caKsI6UhNwmmdyTIckkGV4CMkOfudjGg0QiEqQSQjwFWx4C9ggFyDDhsuQVsjELC8vg8WXsrvY5p75PZ5dJu/vU33/9XW53F2/L1wFgPxZCp0MXYF8O0QIY6hwFPQCcA6ZwDjIH4BxA5gCcA3AOmKM4AoEUcA4gcwDiAKYVIJACzgFkDsA5gMwBOAcAmQNwDsA5gEAKTCvAtAI4B+Ac4Nc5CKSAcwCZA3AOIHMAzgGIAwikRvgrbk3yZ0flyzz7UxwpX6CGA5GPVoqj5XP3B/ln3E6x2WPyAnEgi0wlUhxzKo4/0suin+MeJeJQHDXLwrFEiuOOxPH7/GTRzwkvEjkUQsdHKVHGvxr10NLiRPmFdYG/jg2dO/aOPLfuHCgjx32bSBxFCHZLf/dfx4bd9hrOHHtGzsu92DDaYavTyl5ssrdMK/uUxV7vxabFacUYv9k8Cy3uuTHnsKuMnj4IpElq17gyuuzGpplAakXFu7HlZpl/N7bIHGD8uxUTEn7lyDa6vLJgHgac41d3yrByXPxuZZ4ob7525/glfupYHMqPjkAKw43t3fKp2p37uZYT640cHvZPb8W/a9iBk/JMaebI9oFxIzQx+DeJVaJ0CIqT5ec69+xlbM9RFjUbyXui0b+zyxxTK2PG/2sRpYtgiWxj9tFNpI+Xsc0imFXPyNM/clkEq3ZE38jhyvOHwoHQ6Bw/xR3Nyki0zcqP2mfm0K+MRFsmcxieTXLLHyyfQ5aBtJ7TusJwqm0s1DnHj/GzbM9UbcfOE4x1oWo43GaOOqOi11iKc+Acw8XBO96UoWg4cA6cI7/MATgHzkHmIHPgHEDmABu4FUc9vyqo/7OYVphWtDiHrgeGnJKdbJVxSnZ4eEtNd4LV4/YVfgp3goGdQOr7HtLU5lHt9nEOP5ctXi9S+p2jo61OS1v/KFa+zdPS1jYQuWSOasfSvWfozRyFbn0kUga/lZ2UM9LWqY9Eykh0vN4WwfpKnX+knE1UvsbrTKn3gYc/xITPQzrQXcFJQ8ZZUfrYuIVsV3h64z33Z4KppThbqn5U6vfxme8BeF/0Pm2S5XMwtQjWX+ek5bj756Slufk4B1hbBOuv807N47y0eGtCNX30pwz9O8ltgnO6SjQxrVh539gFabpRxgVp8tLhFD31oQwCaYK6aFwfF8XYq0MBbC6CDdYlaRjt9SVp2Go1zgFeMke3Fg2ax6I0zPXZqnPY0seizamQRTCWvOwvgg3WZdk20eLLsm20wzgHtjHKOQxzRb15XDFib2QObCMn5wghLCk+NZcs24btQNqrJdlSqYwt641lWmFC8TutdLmqzDyuqjQzAim2QeYYqGuyqaSn12TTR0tNfvE2rK4r0Md12XTTT76yh+HTiifnKEK4MVfzuOHINnAOGOMcHWd1Uzbm0sqbsuGskzgHeF8EGzyJ3X8igXT6ulXjaN2SDZc9ZFqBnAJpr26L1NDB2yJeG4hzQH6Zo1t3EpvHHRHH3cM5IMvM0a27Uibq3V0pfbcuC+dIoY90mtMDN/tMSQ59yyVzLFd6oi9nYBuBQAqj3HG5XM/naL+LX82+kQ/kk1yuVrI6FWYf13yUQSAlh+Icfdyb4dS/l5Nt4BzYxhjn6ORW92WaDH5f1nNrFM6BbZA5/suDA5rHA1nPsEvOv7IfUSsTj/eKrOfZIlZIgUC6X63I2gS2sZZtfwik5FAC6RAejjSPhxNYC4HUcz0aooBHspZ5ZxZC6DB3DCH3zuAcoQjhsTz5X18eyxPawqUs4BzjarXPPFaxDZwDxlzGr5Yf0YUe38ZvPpSP6QPigDGwQgqskALigGqnFVZIAecAAingHEDmAJwDyByAcwDOAc7Fwc1wwLQCTCuAcwDOAQRSUMk/l/ib+A1NopAAAAAASUVORK5CYII=">
+<title>e-Tourist Guide</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#14181f; --muted:#5b6472; --line:#e3e6eb;
+  --brand:#0e7490; --brand-2:#f97316; --brand-soft:#e0f2f7; --ok:#15803d; --warn:#b45309;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 14px rgba(0,0,0,.05);
+  --radius:16px;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1318; --card:#181e26; --text:#eef1f5; --muted:#9aa4b2; --line:#2a323d;
+    --brand:#22a6c3; --brand-2:#fb923c; --brand-soft:#12303a; --ok:#4ade80; --warn:#fbbf24;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--brand)}
+.app{max-width:720px;margin-inline:auto;min-height:100vh;padding-block-end:calc(84px + var(--safe-bottom))}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);
+  padding:calc(var(--safe-top) + 12px) 16px 10px;border-block-end:1px solid var(--line)}
+.brandrow{display:flex;align-items:center;gap:10px}
+.logo{inline-size:34px;block-size:34px;border-radius:9px}
+h1{font-size:20px;margin:0}
+.locline{font-size:13px;color:var(--muted);margin-block-start:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{padding:14px 16px}
+.view{display:none}
+.view.active{display:block}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-block-end:12px}
+.hero-here{background:linear-gradient(135deg,var(--brand),#155e75);color:#fff}
+.hero-here .k{font-size:12px;text-transform:uppercase;letter-spacing:.06em;opacity:.85}
+.hero-here .t{font-size:20px;font-weight:700;margin-block:4px}
+.hero-here button{background:#fff;color:#155e75;border:0;border-radius:999px;padding:8px 14px;font-weight:600;margin-block-start:8px}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:600;background:var(--brand);color:#fff}
+.btn.secondary{background:var(--brand-soft);color:var(--brand)}
+.btn.ghost{background:transparent;color:var(--brand);padding-inline:6px}
+.btn.small{padding:7px 11px;font-size:14px;border-radius:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:14px}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 2px 8px}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px;border:0;text-align:start;inline-size:100%}
+.thumb{inline-size:64px;block-size:64px;border-radius:10px;object-fit:cover;background:var(--brand-soft);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px}
+.item .name{font-weight:650;font-size:16px}
+.item .desc{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item .dist{font-size:12px;color:var(--brand);font-weight:600;margin-block-start:2px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-inline-start:6px;vertical-align:middle}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.center{text-align:center}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}
+.spinner{inline-size:28px;block-size:28px;border:3px solid var(--line);border-block-start-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.searchbox{display:flex;gap:8px}
+.searchbox input{flex:1;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+nav.tabs{position:fixed;inset-inline:0;bottom:0;z-index:6;background:var(--card);border-block-start:1px solid var(--line);
+  display:flex;justify-content:space-around;padding:8px 8px calc(8px + var(--safe-bottom))}
+nav.tabs button{background:none;border:0;display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--muted);gap:2px;min-inline-size:72px}
+nav.tabs button .ic{font-size:21px;line-height:1}
+nav.tabs button.on{color:var(--brand);font-weight:700}
+/* detail */
+.detail{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+.detail.open{display:block}
+.detail-inner{max-width:720px;margin-inline:auto;padding-block-end:calc(110px + var(--safe-bottom))}
+.dbar{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;
+  padding:calc(var(--safe-top) + 8px) 12px 8px;background:var(--bg)}
+.roundbtn{inline-size:40px;block-size:40px;border-radius:50%;border:0;background:var(--card);box-shadow:var(--shadow);font-size:18px}
+.himg{inline-size:100%;max-block-size:280px;object-fit:cover;display:block}
+.dhead{padding:14px 16px 4px}
+.dhead h2{margin:0;font-size:26px;line-height:1.2}
+.dhead .sub{color:var(--muted);margin-block-start:4px}
+.dbody{padding:4px 16px}
+.dbody h3{font-size:17px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fact{background:var(--brand-soft);border-radius:12px;padding:8px 10px}
+.fact .fk{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fact .fv{font-weight:600;font-size:14px}
+.prose p{margin:0 0 10px}
+.clamp{max-block-size:220px;overflow:hidden;position:relative}
+.clamp::after{content:"";position:absolute;inset-inline:0;bottom:0;block-size:60px;background:linear-gradient(transparent,var(--card))}
+ul.tips{margin:0;padding-inline-start:20px}
+ul.tips li{margin-block-end:6px}
+.dyk li{margin-block-end:8px}
+.way{display:flex;flex-direction:column;gap:8px}
+.waygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.waygrid a{text-decoration:none;text-align:center;background:var(--brand-soft);color:var(--brand);border-radius:12px;padding:10px 4px;font-weight:600;font-size:14px}
+.rec{background:var(--brand-soft);border-radius:12px;padding:10px 12px}
+.player{background:linear-gradient(135deg,#155e75,var(--brand));color:#fff;border-radius:var(--radius);padding:14px}
+.player .stopname{font-weight:700;font-size:17px}
+.player .ctrl{display:flex;gap:10px;align-items:center;justify-content:center;margin-block-start:10px}
+.player .ctrl button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:50%;inline-size:46px;block-size:46px;font-size:18px}
+.player .ctrl button.play{inline-size:58px;block-size:58px;background:#fff;color:#155e75;font-size:22px}
+.player select{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:8px;padding:4px 6px;font-size:13px}
+.stops{list-style:none;margin:10px 0 0;padding:0}
+.stops li{padding:10px 12px;border-radius:12px;margin-block-end:6px;background:var(--card);box-shadow:var(--shadow)}
+.stops li.cur{outline:2px solid var(--brand)}
+.stops li .sn{font-weight:650}
+.stops li .st{font-size:14px;color:var(--muted);margin-block-start:4px}
+.stops li.cur .st{color:var(--text)}
+details.wv{border-block-start:1px solid var(--line);padding-block:8px}
+details.wv summary{font-weight:600;cursor:pointer}
+.toast{position:fixed;inset-inline:16px;bottom:calc(90px + var(--safe-bottom));z-index:20;background:#1f2937;color:#fff;padding:12px 14px;border-radius:12px;display:none;font-size:14px}
+.toast.show{display:block}
+.attrib{font-size:12px;color:var(--muted);padding:10px 16px}
+.install{border:1px dashed var(--brand)}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brandrow">
+      <img class="logo" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAFmUlEQVR42u2dy44bRRSGq6MRS7bZ5caKsI6UhNwmmdyTIckkGV4CMkOfudjGg0QiEqQSQjwFWx4C9ggFyDDhsuQVsjELC8vg8WXsrvY5p75PZ5dJu/vU33/9XW53F2/L1wFgPxZCp0MXYF8O0QIY6hwFPQCcA6ZwDjIH4BxA5gCcA3AOmKM4AoEUcA4gcwDiAKYVIJACzgFkDsA5gMwBOAcAmQNwDsA5gEAKTCvAtAI4B+Ac4Nc5CKSAcwCZA3AOIHMAzgGIAwikRvgrbk3yZ0flyzz7UxwpX6CGA5GPVoqj5XP3B/ln3E6x2WPyAnEgi0wlUhxzKo4/0suin+MeJeJQHDXLwrFEiuOOxPH7/GTRzwkvEjkUQsdHKVHGvxr10NLiRPmFdYG/jg2dO/aOPLfuHCgjx32bSBxFCHZLf/dfx4bd9hrOHHtGzsu92DDaYavTyl5ssrdMK/uUxV7vxabFacUYv9k8Cy3uuTHnsKuMnj4IpElq17gyuuzGpplAakXFu7HlZpl/N7bIHGD8uxUTEn7lyDa6vLJgHgac41d3yrByXPxuZZ4ob7525/glfupYHMqPjkAKw43t3fKp2p37uZYT640cHvZPb8W/a9iBk/JMaebI9oFxIzQx+DeJVaJ0CIqT5ec69+xlbM9RFjUbyXui0b+zyxxTK2PG/2sRpYtgiWxj9tFNpI+Xsc0imFXPyNM/clkEq3ZE38jhyvOHwoHQ6Bw/xR3Nyki0zcqP2mfm0K+MRFsmcxieTXLLHyyfQ5aBtJ7TusJwqm0s1DnHj/GzbM9UbcfOE4x1oWo43GaOOqOi11iKc+Acw8XBO96UoWg4cA6cI7/MATgHzkHmIHPgHEDmABu4FUc9vyqo/7OYVphWtDiHrgeGnJKdbJVxSnZ4eEtNd4LV4/YVfgp3goGdQOr7HtLU5lHt9nEOP5ctXi9S+p2jo61OS1v/KFa+zdPS1jYQuWSOasfSvWfozRyFbn0kUga/lZ2UM9LWqY9Eykh0vN4WwfpKnX+knE1UvsbrTKn3gYc/xITPQzrQXcFJQ8ZZUfrYuIVsV3h64z33Z4KppThbqn5U6vfxme8BeF/0Pm2S5XMwtQjWX+ek5bj756Slufk4B1hbBOuv807N47y0eGtCNX30pwz9O8ltgnO6SjQxrVh539gFabpRxgVp8tLhFD31oQwCaYK6aFwfF8XYq0MBbC6CDdYlaRjt9SVp2Go1zgFeMke3Fg2ax6I0zPXZqnPY0seizamQRTCWvOwvgg3WZdk20eLLsm20wzgHtjHKOQxzRb15XDFib2QObCMn5wghLCk+NZcs24btQNqrJdlSqYwt641lWmFC8TutdLmqzDyuqjQzAim2QeYYqGuyqaSn12TTR0tNfvE2rK4r0Md12XTTT76yh+HTiifnKEK4MVfzuOHINnAOGOMcHWd1Uzbm0sqbsuGskzgHeF8EGzyJ3X8igXT6ulXjaN2SDZc9ZFqBnAJpr26L1NDB2yJeG4hzQH6Zo1t3EpvHHRHH3cM5IMvM0a27Uibq3V0pfbcuC+dIoY90mtMDN/tMSQ59yyVzLFd6oi9nYBuBQAqj3HG5XM/naL+LX82+kQ/kk1yuVrI6FWYf13yUQSAlh+Icfdyb4dS/l5Nt4BzYxhjn6ORW92WaDH5f1nNrFM6BbZA5/suDA5rHA1nPsEvOv7IfUSsTj/eKrOfZIlZIgUC6X63I2gS2sZZtfwik5FAC6RAejjSPhxNYC4HUcz0aooBHspZ5ZxZC6DB3DCH3zuAcoQjhsTz5X18eyxPawqUs4BzjarXPPFaxDZwDxlzGr5Yf0YUe38ZvPpSP6QPigDGwQgqskALigGqnFVZIAecAAingHEDmAJwDyByAcwDOAc7Fwc1wwLQCTCuAcwDOAQRSUMk/l/ib+A1NopAAAAAASUVORK5CYII=">
+      <div style="min-inline-size:0;flex:1">
+        <h1>e-Tourist Guide</h1>
+        <div class="locline" id="locline">Tap “Find spots near me” to start</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- NEARBY -->
+    <section class="view active" id="view-nearby">
+      <div id="hereCard"></div>
+      <div class="card" id="startCard">
+        <div style="font-weight:700;font-size:17px">Explore where you are</div>
+        <p class="muted small" style="margin:6px 0 12px">I’ll use your location to find tourist spots around you, then give you history, fun facts, travel tips and an audio tour.</p>
+        <button class="btn" id="btnLocate">📍 Find spots near me</button>
+      </div>
+      <div class="row spread" id="radiusRow" style="display:none">
+        <div class="chips" id="radiusChips">
+          <button class="chip" data-r="1000">1 km</button>
+          <button class="chip on" data-r="5000">5 km</button>
+          <button class="chip" data-r="10000">10 km</button>
+        </div>
+        <button class="btn ghost small" id="btnRefresh">↻ Refresh</button>
+      </div>
+      <div id="nearbyList"></div>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="view" id="view-search">
+      <form class="searchbox" id="searchForm" autocomplete="off">
+        <input id="q" type="search" placeholder="Search a place, e.g. Mysore Palace" enterkeyhint="search">
+        <button class="btn" type="submit">Go</button>
+      </form>
+      <div class="chips" style="margin-block-start:10px" id="suggest"></div>
+      <div id="searchList" style="margin-block-start:12px"></div>
+    </section>
+
+    <!-- SAVED -->
+    <section class="view" id="view-saved">
+      <div class="section-title">Saved places</div>
+      <div id="savedList"></div>
+      <div class="section-title">Recently viewed</div>
+      <div id="recentList"></div>
+      <div class="card install" style="margin-block-start:18px">
+        <div style="font-weight:700">Add this app to your Home Screen</div>
+        <p class="small muted" style="margin:6px 0 0">In Safari, tap the Share button (square with an arrow), then <b>Add to Home Screen</b>. It will open full-screen like a normal app.</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button class="on" data-v="nearby"><span class="ic">🧭</span>Nearby</button>
+    <button data-v="search"><span class="ic">🔍</span>Search</button>
+    <button data-v="saved"><span class="ic">⭐</span>Saved</button>
+  </nav>
+</div>
+
+<!-- DETAIL -->
+<div class="detail" id="detail">
+  <div class="detail-inner">
+    <div class="dbar">
+      <button class="roundbtn" id="btnBack" aria-label="Back">←</button>
+      <button class="roundbtn" id="btnSave" aria-label="Save">☆</button>
+    </div>
+    <div id="dcontent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- helpers ---------------- */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try { const v = localStorage.getItem("etg_" + k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem("etg_" + k, JSON.stringify(v)); } catch(e){} }
+};
+let toastTimer = null;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
+}
+function toRad(d){ return d * Math.PI / 180; }
+function distKm(a, b){
+  const R = 6371, dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+  const x = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function fmtDist(km){
+  if (km < 1) return Math.round(km * 1000 / 10) * 10 + " m";
+  if (km < 20) return km.toFixed(1) + " km";
+  return Math.round(km).toLocaleString() + " km";
+}
+function fmtDur(min){
+  min = Math.round(min);
+  if (min < 60) return min + " min";
+  const h = Math.floor(min / 60), m = min % 60;
+  return h + " h" + (m ? " " + m + " min" : "");
+}
+async function getJSON(url, timeoutMs){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), timeoutMs || 15000);
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function mwURL(host, params){
+  const u = new URL("https://" + host + "/w/api.php");
+  const all = Object.assign({}, params, { format: "json", origin: "*", formatversion: 2 });
+  Object.keys(all).forEach(k => u.searchParams.set(k, all[k]));
+  return u.toString();
+}
+const WP = "en.wikipedia.org", WV = "en.wikivoyage.org", WD = "www.wikidata.org";
+function spinner(){ return '<div class="spinner"></div>'; }
+function sentences(text){
+  return (text || "").replace(/\s+/g, " ").match(/[^.!?]+(?:[.!?]+["')\]]*|$)/g)?.map(s => s.trim()).filter(Boolean) || [];
+}
+function trimToSentences(text, maxChars){
+  const ss = sentences(text); let out = "";
+  for (const s of ss){ if ((out + " " + s).length > maxChars && out) break; out += (out ? " " : "") + s; }
+  return out;
+}
+function paras(text){ return (text || "").split(/\n+/).map(p => p.trim()).filter(p => p.length > 0); }
+
+/* ---------------- classification ---------------- */
+const TOURIST_RE = /(temple|fort\b|fortress|palace|museum|park\b|garden|lake|monument|memorial|church|cathedral|basilica|chapel|mosque|masjid|dargah|gurudwara|gurdwara|tomb|mausoleum|stupa|monastery|cave|falls|waterfall|beach|zoo|aquarium|gallery|heritage|historic|landmark|tower|statue|bridge|castle|shrine|mandir|ruins|archaeolog|sanctuary|botanical|square|bazaar|market|hill\b|hills|viewpoint|peak|stadium|theatre|theater|opera|unesco|attraction|amusement|planetarium|observatory|lighthouse|ghat|stepwell|step well|baoli|haveli|mahal|minar|gate\b|arch\b|dam\b|reservoir|island|valley|national park|wildlife|synagogue|pagoda|cathedral|abbey|plaza|pier|promenade|old town|citadel|pyramid|amphitheatre|amphitheater|basilica|art centre|cultural centre|science centre)/i;
+const NOT_TOURIST_RE = /(railway station|metro station|train station|bus station|bus stand|bus depot|school|college|university|hospital|clinic|company|corporation|constituency|assembly|ward\b|neighbourhood|neighborhood|suburb|village in|census town|road\b|street|highway|expressway|office|bank\b|apartment|residential|locality|airport|police|software|it park|tech park|business park|industrial|mall\b|hotel\b|restaurant|pub\b|footballer|cricketer|politician|actor|film\b|album|newspaper|magazine)/i;
+function scorePlace(p){
+  const s = (p.title || "") + " " + (p.description || "");
+  let sc = 0;
+  if (TOURIST_RE.test(s)) sc += 3;
+  if (NOT_TOURIST_RE.test(s)) sc -= 3;
+  if (p.thumb) sc += 1;
+  return sc;
+}
+function categoryOf(title, desc){
+  const s = (title + " " + (desc || "")).toLowerCase();
+  if (/(temple|mandir|mosque|masjid|dargah|church|cathedral|basilica|chapel|gurudwara|gurdwara|shrine|monastery|stupa|synagogue|pagoda|abbey)/.test(s)) return "religious";
+  if (/(fort|fortress|citadel|castle|palace|mahal|haveli|tomb|mausoleum|ruins|archaeolog|monument|minar|stepwell|baoli|pyramid)/.test(s)) return "heritage";
+  if (/(museum|gallery|planetarium|science centre|art centre)/.test(s)) return "museum";
+  if (/(beach|island|pier|promenade)/.test(s)) return "beach";
+  if (/(hill|peak|cave|falls|waterfall|valley|trek|national park|wildlife|sanctuary)/.test(s)) return "nature";
+  if (/(park|garden|lake|botanical|zoo|dam|reservoir)/.test(s)) return "park";
+  if (/(market|bazaar|square|plaza|old town)/.test(s)) return "market";
+  return "general";
+}
+const CAT_ICON = { religious:"🛕", heritage:"🏰", museum:"🏛️", beach:"🏖️", nature:"⛰️", park:"🌳", market:"🛍️", general:"📍" };
+
+/* ---------------- state ---------------- */
+const state = { me: null, radius: 5000, nearby: [], current: null, tour: null };
+
+/* ---------------- tabs ---------------- */
+function showView(v){
+  $$(".view").forEach(el => el.classList.toggle("active", el.id === "view-" + v));
+  $$("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  if (v === "saved") renderSaved();
+  if (v === "search") setTimeout(() => $("#q").focus(), 50);
+  window.scrollTo(0, 0);
+}
+$$("#tabs button").forEach(b => b.addEventListener("click", () => showView(b.dataset.v)));
+
+/* ---------------- location ---------------- */
+function locate(){
+  return new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) return reject(new Error("Location isn’t supported on this browser."));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy }),
+      err => {
+        let m = "Couldn’t get your location.";
+        if (err.code === 1) m = "Location permission is off. On iPhone: Settings → Privacy & Security → Location Services → Safari Websites → While Using the App. Then try again.";
+        else if (err.code === 3) m = "Getting your location took too long. Please try again, ideally outdoors.";
+        reject(new Error(m));
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+    );
+  });
+}
+async function reverseGeocode(lat, lon, zoom){
+  try {
+    const u = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=en&zoom=" + (zoom || 14) + "&lat=" + lat + "&lon=" + lon;
+    const d = await getJSON(u, 10000);
+    return d && d.address ? d.address : null;
+  } catch(e){ return null; }
+}
+function areaLabel(a){
+  if (!a) return "";
+  const local = a.suburb || a.neighbourhood || a.quarter || a.village || a.town || "";
+  const city = a.city || a.town || a.county || a.state_district || "";
+  return [local, city !== local ? city : "", a.state].filter(Boolean).slice(0, 2).join(", ");
+}
+function cityOf(a){
+  if (!a) return "";
+  return a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || "";
+}
+
+/* ---------------- Wikipedia lookups ---------------- */
+function mapPages(pages){
+  return (pages || []).filter(p => p.coordinates && p.coordinates[0]).map(p => ({
+    title: p.title,
+    description: p.description || "",
+    lat: p.coordinates[0].lat, lon: p.coordinates[0].lon,
+    thumb: p.thumbnail ? p.thumbnail.source : ""
+  }));
+}
+async function geoSearch(lat, lon, radius, limit){
+  const d = await getJSON(mwURL(WP, {
+    action: "query", generator: "geosearch", ggscoord: lat + "|" + lon, ggsradius: radius, ggslimit: limit || 50,
+    prop: "coordinates|pageimages|description", piprop: "thumbnail", pithumbsize: 240, pilimit: 50, colimit: 50
+  }));
+  const here = { lat, lon };
+  return mapPages(d.query && d.query.pages).map(p => Object.assign(p, { km: distKm(here, p), score: scorePlace(p) }));
+}
+async function textSearch(q){
+  const d = await getJSON(mwURL(WP, {
+    action: "query", generator: "search", gsrsearch: q, gsrlimit: 15,
+    prop: "coordinates|pageimages|description", piprop: "thumbnail", pithumbsize: 240, pilimit: 15, colimit: 15
+  }));
+  const pages = (d.query && d.query.pages) || [];
+  pages.sort((a, b) => (a.index || 0) - (b.index || 0));
+  return mapPages(pages);
+}
+
+/* ---------------- list rendering ---------------- */
+function itemHTML(p, i, showKm){
+  const cat = categoryOf(p.title, p.description);
+  const img = p.thumb ? '<img class="thumb" loading="lazy" alt="" src="' + esc(p.thumb) + '">' : '<div class="thumb">' + CAT_ICON[cat] + '</div>';
+  const km = showKm && p.km != null ? '<div class="dist">' + fmtDist(p.km) + ' away</div>' : "";
+  return '<button class="item" data-i="' + i + '">' + img +
+    '<div style="min-inline-size:0"><div class="name">' + esc(p.title) + '</div>' +
+    (p.description ? '<div class="desc">' + esc(p.description) + '</div>' : "") + km + '</div></button>';
+}
+function bindList(container, arr){
+  $$(".item", container).forEach(b => b.addEventListener("click", () => openPlace(arr[+b.dataset.i])));
+}
+
+/* ---------------- Nearby ---------------- */
+async function loadNearby(useCache){
+  const list = $("#nearbyList");
+  list.innerHTML = spinner();
+  try {
+    if (!useCache || !state.me){
+      $("#locline").textContent = "Finding your location…";
+      state.me = await locate();
+      store.set("lastLoc", state.me);
+      reverseGeocode(state.me.lat, state.me.lon).then(a => {
+        const lbl = areaLabel(a);
+        $("#locline").textContent = "📍 " + (lbl || (state.me.lat.toFixed(4) + ", " + state.me.lon.toFixed(4)));
+      });
+    }
+    $("#startCard").style.display = "none";
+    $("#radiusRow").style.display = "flex";
+    const all = await geoSearch(state.me.lat, state.me.lon, state.radius, 50);
+    const spots = all.filter(p => p.score >= 2).sort((a, b) => a.km - b.km);
+    const others = all.filter(p => p.score < 2 && p.score > -2).sort((a, b) => a.km - b.km).slice(0, 15);
+    state.nearby = spots.concat(others);
+
+    // "You are here" detection
+    const here = spots.find(p => p.km <= 0.35);
+    const hc = $("#hereCard");
+    if (here){
+      hc.innerHTML = '<div class="card hero-here"><div class="k">You seem to be at</div><div class="t">' + esc(here.title) + '</div>' +
+        '<div class="small" style="opacity:.9">' + esc(here.description || "") + '</div>' +
+        '<button id="btnHere">Start the guided tour →</button></div>';
+      $("#btnHere").addEventListener("click", () => openPlace(here, { tour: true }));
+    } else hc.innerHTML = "";
+
+    let html = "";
+    if (spots.length){
+      html += '<div class="section-title">Tourist spots nearby (' + spots.length + ')</div><div class="list">' +
+        spots.map((p, i) => itemHTML(p, i, true)).join("") + '</div>';
+    } else {
+      html += '<div class="empty">No well-known tourist spots within ' + (state.radius/1000) + ' km.<br>Try a bigger radius or search a place by name.</div>';
+    }
+    if (others.length){
+      html += '<div class="section-title">Other places around you</div><div class="list">' +
+        others.map((p, i) => itemHTML(p, i + spots.length, true)).join("") + '</div>';
+    }
+    list.innerHTML = html;
+    bindList(list, state.nearby);
+  } catch(e){
+    $("#locline").textContent = "Location unavailable";
+    $("#startCard").style.display = "";
+    list.innerHTML = '<div class="card"><b>Hmm, that didn’t work.</b><p class="small muted" style="margin:6px 0 0">' + esc(e.message || "Please check your internet connection.") + '</p></div>';
+  }
+}
+$("#btnLocate").addEventListener("click", () => loadNearby(false));
+$("#btnRefresh").addEventListener("click", () => loadNearby(false));
+$$("#radiusChips .chip").forEach(c => c.addEventListener("click", () => {
+  $$("#radiusChips .chip").forEach(x => x.classList.toggle("on", x === c));
+  state.radius = +c.dataset.r; loadNearby(true);
+}));
+
+/* ---------------- Search ---------------- */
+const SUGGEST = ["Mysore Palace", "Hampi", "Taj Mahal", "Gateway of India", "Lalbagh", "Amber Fort", "Eiffel Tower", "Colosseum"];
+function renderSuggest(){
+  const recentQ = store.get("recentQ", []);
+  const items = recentQ.length ? recentQ.slice(0, 6) : SUGGEST;
+  $("#suggest").innerHTML = items.map(s => '<button class="chip" type="button">' + esc(s) + '</button>').join("");
+  $$("#suggest .chip").forEach(c => c.addEventListener("click", () => { $("#q").value = c.textContent; doSearch(); }));
+}
+async function doSearch(){
+  const q = $("#q").value.trim();
+  if (!q) return;
+  const rq = store.get("recentQ", []).filter(x => x.toLowerCase() !== q.toLowerCase());
+  rq.unshift(q); store.set("recentQ", rq.slice(0, 8));
+  const list = $("#searchList");
+  list.innerHTML = spinner();
+  try {
+    const res = await textSearch(q);
+    if (state.me) res.forEach(p => p.km = distKm(state.me, p));
+    if (!res.length){ list.innerHTML = '<div class="empty">No places found for “' + esc(q) + '”. Try a different spelling or add the city name.</div>'; return; }
+    list.innerHTML = '<div class="list">' + res.map((p, i) => itemHTML(p, i, !!state.me)).join("") + '</div>';
+    bindList(list, res);
+    $("#q").blur();
+  } catch(e){
+    list.innerHTML = '<div class="empty">Search failed. Please check your internet connection.</div>';
+  }
+  renderSuggest();
+}
+$("#searchForm").addEventListener("submit", e => { e.preventDefault(); doSearch(); });
+
+/* ---------------- Saved / recent ---------------- */
+function placeLite(p){ return { title: p.title, description: p.description || "", lat: p.lat, lon: p.lon, thumb: p.thumb || "" }; }
+function isSaved(title){ return store.get("saved", []).some(x => x.title === title); }
+function toggleSave(){
+  const p = state.current; if (!p) return;
+  let s = store.get("saved", []);
+  if (isSaved(p.title)){ s = s.filter(x => x.title !== p.title); toast("Removed from Saved"); }
+  else { s.unshift(placeLite(p)); toast("Saved ⭐"); }
+  store.set("saved", s); updateSaveBtn();
+}
+function updateSaveBtn(){ $("#btnSave").textContent = state.current && isSaved(state.current.title) ? "★" : "☆"; }
+function addRecent(p){
+  const r = store.get("recent", []).filter(x => x.title !== p.title);
+  r.unshift(placeLite(p)); store.set("recent", r.slice(0, 12));
+}
+function renderSaved(){
+  const s = store.get("saved", []), r = store.get("recent", []);
+  [[s, "#savedList", "Nothing saved yet. Tap ☆ on any place to save it."], [r, "#recentList", "Places you open will show up here."]].forEach(([arr, sel, emptyMsg]) => {
+    const el = $(sel);
+    if (state.me) arr.forEach(p => p.km = distKm(state.me, p));
+    el.innerHTML = arr.length ? '<div class="list">' + arr.map((p, i) => itemHTML(p, i, !!state.me)).join("") + '</div>' : '<div class="empty small">' + emptyMsg + '</div>';
+    bindList(el, arr);
+  });
+}
+$("#btnSave").addEventListener("click", toggleSave);
+
+/* ---------------- Detail data ---------------- */
+function parseSections(extract){
+  const out = [{ title: "Introduction", level: 2, text: "" }];
+  (extract || "").split("\n").forEach(line => {
+    const m = line.match(/^(={2,})\s*(.+?)\s*\1\s*$/);
+    if (m) out.push({ title: m[2], level: m[1].length, text: "" });
+    else out[out.length - 1].text += line + "\n";
+  });
+  out.forEach(s => s.text = s.text.trim());
+  return out;
+}
+const SKIP_SEC = /^(see also|references|external links|further reading|notes|bibliography|gallery|sources|citations|footnotes|works cited|literature|explanatory notes)$/i;
+
+async function fetchArticle(title){
+  const d = await getJSON(mwURL(WP, { action: "query", prop: "extracts|pageprops|pageimages|coordinates|description", explaintext: 1, exsectionformat: "wiki",
+    titles: title, redirects: 1, piprop: "original|thumbnail", pithumbsize: 800 }));
+  const p = d.query && d.query.pages && d.query.pages[0];
+  if (!p || p.missing) throw new Error("Article not found");
+  return {
+    title: p.title, extract: p.extract || "", description: p.description || "",
+    qid: p.pageprops && p.pageprops.wikibase_item,
+    image: (p.thumbnail && p.thumbnail.source) || (p.original && p.original.source) || "",
+    lat: p.coordinates && p.coordinates[0] ? p.coordinates[0].lat : null,
+    lon: p.coordinates && p.coordinates[0] ? p.coordinates[0].lon : null,
+    url: "https://en.wikipedia.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_"))
+  };
+}
+
+const WD_PROPS = [
+  ["P571", "Built / founded"], ["P1619", "Opened"], ["P84", "Architect"], ["P88", "Commissioned by"],
+  ["P149", "Style"], ["P140", "Religion"], ["P1435", "Heritage status"], ["P2048", "Height"],
+  ["P2046", "Area"], ["P1174", "Visitors per year"], ["P131", "Located in"]
+];
+function wdTime(v){
+  if (!v || !v.time) return "";
+  const m = v.time.match(/^([+-])0*(\d+)-(\d\d)-(\d\d)/); if (!m) return "";
+  const yr = +m[2], bce = m[1] === "-";
+  if (v.precision <= 7) { const c = Math.ceil(yr / 100); return c + (c % 10 === 1 && c !== 11 ? "st" : c % 10 === 2 && c !== 12 ? "nd" : c % 10 === 3 && c !== 13 ? "rd" : "th") + " century" + (bce ? " BCE" : ""); }
+  if (v.precision === 8) return (Math.floor(yr / 10) * 10) + "s" + (bce ? " BCE" : "");
+  return yr + (bce ? " BCE" : "");
+}
+async function fetchFacts(qid){
+  if (!qid) return [];
+  try {
+    const d = await getJSON(mwURL(WD, { action: "wbgetentities", ids: qid, props: "claims" }), 12000);
+    const ent = d.entities && d.entities[qid]; if (!ent) return [];
+    const claims = ent.claims || {};
+    const raw = []; const needLabels = new Set();
+    WD_PROPS.forEach(([pid, label]) => {
+      const cl = (claims[pid] || []).filter(c => c.rank !== "deprecated").slice(0, 2);
+      const vals = [];
+      cl.forEach(c => {
+        const dv = c.mainsnak && c.mainsnak.datavalue; if (!dv) return;
+        if (dv.type === "wikibase-entityid"){ vals.push({ q: dv.value.id }); needLabels.add(dv.value.id); }
+        else if (dv.type === "time"){ const t = wdTime(dv.value); if (t) vals.push({ s: t }); }
+        else if (dv.type === "quantity"){
+          const amt = Math.round(parseFloat(dv.value.amount) * 100) / 100;
+          const unitQ = (dv.value.unit || "").split("/").pop();
+          const unit = unitQ === "Q11573" ? " m" : unitQ === "Q712226" ? " km²" : unitQ === "Q35852" ? " ha" : unitQ === "Q3249" ? " ft" : unitQ === "Q232291" ? " sq mi" : "";
+          vals.push({ s: amt.toLocaleString() + unit });
+        }
+        else if (dv.type === "string") vals.push({ s: dv.value });
+      });
+      if (pid === "P1174" && vals.length) vals.splice(1);
+      if (vals.length) raw.push({ label, vals });
+    });
+    let labels = {};
+    if (needLabels.size){
+      const ids = Array.from(needLabels).slice(0, 50).join("|");
+      const l = await getJSON(mwURL(WD, { action: "wbgetentities", ids, props: "labels", languages: "en" }), 12000);
+      Object.keys(l.entities || {}).forEach(k => { const e = l.entities[k]; labels[k] = e.labels && e.labels.en ? e.labels.en.value : ""; });
+    }
+    return raw.map(r => ({ label: r.label, value: r.vals.map(v => v.s || labels[v.q]).filter(Boolean).join(", ") })).filter(r => r.value);
+  } catch(e){ return []; }
+}
+
+async function fetchWeather(lat, lon){
+  try {
+    const u = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+      "&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,sunset&timezone=auto&forecast_days=2";
+    return await getJSON(u, 10000);
+  } catch(e){ return null; }
+}
+const WMO = c => c === 0 ? "☀️ Clear" : c <= 2 ? "🌤️ Partly cloudy" : c === 3 ? "☁️ Cloudy" : c <= 48 ? "🌫️ Foggy" : c <= 57 ? "🌦️ Drizzle" : c <= 67 ? "🌧️ Rain" : c <= 77 ? "❄️ Snow" : c <= 82 ? "🌧️ Showers" : c <= 86 ? "🌨️ Snow showers" : "⛈️ Thunderstorm";
+
+async function fetchWikivoyage(candidates, placeTitle){
+  for (const t of candidates.filter(Boolean)){
+    try {
+      const d = await getJSON(mwURL(WV, { action: "query", prop: "extracts|pageprops", explaintext: 1, exsectionformat: "wiki", titles: t, redirects: 1 }), 12000);
+      const p = d.query && d.query.pages && d.query.pages[0];
+      if (!p || p.missing || !p.extract) continue;
+      if (p.pageprops && p.pageprops.disambiguation !== undefined) continue;
+      if (/may refer to|disambiguation/i.test(p.extract.slice(0, 300))) continue;
+      const secs = parseSections(p.extract);
+      const want = ["Stay safe", "Respect", "Stay healthy", "Cope", "Climate", "Get around", "Get in", "Buy"];
+      const picked = [];
+      want.forEach(w => { const s = secs.find(x => x.title.toLowerCase() === w.toLowerCase() && x.text.length > 40); if (s) picked.push(s); });
+      // mentions of the place itself
+      const key = placeTitle.replace(/\s*\(.*?\)\s*/g, "").trim();
+      const mentions = paras(p.extract).filter(pp => !/^=/.test(pp) && pp.toLowerCase().includes(key.toLowerCase())).slice(0, 3);
+      return { title: p.title, sections: picked, mentions, url: "https://en.wikivoyage.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")) };
+    } catch(e){ /* try next */ }
+  }
+  return null;
+}
+
+async function driveEstimate(a, b){
+  try {
+    const u = "https://router.project-osrm.org/route/v1/driving/" + a.lon + "," + a.lat + ";" + b.lon + "," + b.lat + "?overview=false";
+    const d = await getJSON(u, 10000);
+    if (d.code === "Ok" && d.routes && d.routes[0]) return { km: d.routes[0].distance / 1000, min: d.routes[0].duration / 60 };
+  } catch(e){}
+  return null;
+}
+
+/* ---------------- content builders ---------------- */
+function funFacts(extract, title){
+  const ss = sentences(extract.replace(/^=+.*=+$/gm, ""));
+  const KEY = /(largest|oldest|tallest|highest|longest|biggest|smallest|first|only|unique|famous|unesco|world heritage|legend|believed|said to|known as|nicknamed|named after|built by|commissioned|constructed|took \d+|million|thousand|record|visited by|rumou?r|myth|mystery|secret|surviv|destroyed|rebuilt|restored|inspired|carved|single|gold|silver|diamond|elephant|king|queen|emperor|maharaja|sultan|dynasty|festival)/i;
+  const scored = ss.slice(2).map((s, i) => {
+    let sc = 0;
+    if (s.length < 50 || s.length > 280) return { s, sc: -9, i };
+    if (/\d/.test(s)) sc += 1;
+    const m = s.match(new RegExp(KEY.source, "gi")); if (m) sc += Math.min(m.length, 3) * 2;
+    if (/^(it|this|these|they|he|she|however|but|also)\b/i.test(s)) sc -= 1;
+    if (/(citation|retrieved|isbn|pp\.)/i.test(s)) sc -= 9;
+    return { s, sc, i };
+  }).filter(x => x.sc >= 3);
+  scored.sort((a, b) => b.sc - a.sc);
+  const pick = []; const seen = new Set();
+  for (const x of scored){ const k = x.s.slice(0, 40); if (seen.has(k)) continue; seen.add(k); pick.push(x); if (pick.length >= 5) break; }
+  return pick.sort((a, b) => a.i - b.i).map(x => x.s);
+}
+
+function buildTour(art, secs, nextStops){
+  const stops = [];
+  const intro = secs[0] ? secs[0].text : "";
+  stops.push({ name: "Welcome to " + art.title, text: trimToSentences(intro, 700) || ("Welcome to " + art.title + ".") });
+  const ORDER = [/(history|historical|background|origin|etymology|founding|construction)/i, /(legend|myth|folklore|tradition)/i,
+    /(architecture|design|structure|layout|features|exterior|interior|building|complex|plan)/i, /(art|sculpture|carving|painting|murals|collection|exhibit)/i,
+    /(religious|significance|worship|deity|ritual|culture|festival|celebration|events)/i, /(garden|grounds|flora|fauna|wildlife|geography|setting)/i,
+    /(tourism|visitor|today|present|restoration|conservation|preservation|museum)/i];
+  const used = new Set();
+  ORDER.forEach(re => {
+    const s = secs.find((x, idx) => idx > 0 && !used.has(idx) && re.test(x.title) && !SKIP_SEC.test(x.title) && x.text.length > 120);
+    if (s){ used.add(secs.indexOf(s)); stops.push({ name: s.title, text: trimToSentences(s.text, 750) }); }
+  });
+  if (stops.length < 4){
+    secs.forEach((s, idx) => {
+      if (stops.length >= 5 || idx === 0 || used.has(idx) || SKIP_SEC.test(s.title) || s.text.length < 150) return;
+      used.add(idx); stops.push({ name: s.title, text: trimToSentences(s.text, 650) });
+    });
+  }
+  const outro = nextStops && nextStops.length
+    ? "That brings us to the end of this tour of " + art.title + ". If you’d like to keep exploring, " + nextStops.slice(0, 3).map(n => n.title + " is about " + fmtDist(n.km) + " away").join(", ") + ". Enjoy the rest of your visit!"
+    : "That brings us to the end of this tour of " + art.title + ". Enjoy the rest of your visit!";
+  stops.push({ name: "Wrapping up", text: outro });
+  return stops;
+}
+
+function generalTips(cat, weather, title){
+  const t = [];
+  const C = {
+    religious: ["Dress modestly — cover shoulders and knees; carry a scarf or stole.", "Footwear usually has to be removed; socks help on hot stone floors.", "Photography may be restricted inside — check signs before taking pictures.", "Be respectful during prayers and rituals; keep your voice low."],
+    heritage: ["Wear comfortable walking shoes — expect stairs, ramparts and uneven ground.", "Go early in the morning to beat crowds and the midday heat.", "Buy tickets at the official counter or website, and consider a licensed guide.", "Carry some cash; smaller counters may not accept cards or UPI."],
+    museum: ["Check the weekly closing day before you go (many museums close one day a week).", "Large bags may need to go into a cloakroom.", "Ask whether photography is allowed and if there’s an audio guide."],
+    beach: ["Use sunscreen, a hat and sunglasses; carry plenty of water.", "Swim only where lifeguards are on duty and watch for warning flags.", "Check tide timings and avoid the water during rough seas."],
+    nature: ["Wear good-grip shoes and carry water and a light snack.", "Start early and plan to be back before dark.", "Don’t litter and don’t feed wild animals.", "Mobile signal may be weak — download offline maps."],
+    park: ["Mornings and late afternoons are the most pleasant times to visit.", "Carry water and mosquito repellent.", "Check the opening hours — many parks close at sunset."],
+    market: ["Keep your wallet and phone secure in crowds.", "Bargaining is common in street markets — be polite and smile.", "Carry small change and some cash."],
+    general: ["Check the opening hours and ticket prices on the official website before going.", "Carry water, a power bank and some cash.", "Keep a copy of your ID handy."]
+  };
+  (C[cat] || C.general).forEach(x => t.push(x));
+  if (weather && weather.daily){
+    const max = weather.daily.temperature_2m_max[0], rain = weather.daily.precipitation_probability_max[0], uv = weather.daily.uv_index_max[0];
+    if (rain != null && rain >= 50) t.unshift("🌧️ " + rain + "% chance of rain today — carry an umbrella or raincoat.");
+    if (max != null && max >= 33) t.unshift("🥵 It’s going to be hot (up to " + Math.round(max) + "°C) — stay hydrated and avoid the 12–3 pm sun.");
+    if (max != null && max <= 8) t.unshift("🧥 It’s cold (max " + Math.round(max) + "°C) — dress in warm layers.");
+    if (uv != null && uv >= 8) t.push("High UV index (" + Math.round(uv) + ") — sunscreen and a hat are a must.");
+  }
+  return t;
+}
+
+function recommendTravel(km){
+  if (km == null) return null;
+  if (km < 1.2) return { icon: "🚶", text: "It’s close — walking is the best option (about " + fmtDur(km * 1.3 / 4.5 * 60) + ")." };
+  if (km < 5) return { icon: "🛺", text: "Take an auto-rickshaw or cab, or walk if you enjoy it (about " + fmtDur(km * 1.3 / 4.5 * 60) + " on foot)." };
+  if (km < 40) return { icon: "🚕", text: "A cab is easiest. Metro or city bus is cheaper — check the public transport route below." };
+  if (km < 300) return { icon: "🚗", text: "Best by car/cab or an intercity bus or train. Plan for a day trip." };
+  if (km < 800) return { icon: "🚆", text: "Long distance — an overnight train or a flight is usually best." };
+  return { icon: "✈️", text: "Very far — flying is the practical option, then local transport." };
+}
+
+/* ---------------- open place ---------------- */
+async function openPlace(p, opts){
+  opts = opts || {};
+  stopSpeech();
+  state.current = placeLite(p);
+  updateSaveBtn();
+  const det = $("#detail");
+  if (!det.classList.contains("open")){ det.classList.add("open"); history.pushState({ d: 1 }, ""); }
+  det.scrollTop = 0;
+  const C = $("#dcontent");
+  C.innerHTML = (p.thumb ? '<img class="himg" alt="" src="' + esc(p.thumb) + '">' : "") +
+    '<div class="dhead"><h2>' + esc(p.title) + '</h2><div class="sub">' + esc(p.description || "") + '</div></div>' + spinner();
+
+  let art;
+  try { art = await fetchArticle(p.title); }
+  catch(e){ C.innerHTML += '<div class="card" style="margin:12px 16px">Couldn’t load details. Please check your internet connection.</div>'; return; }
+  if (state.current.title !== p.title && state.current.title !== art.title) return; // user moved on
+  const lat = art.lat != null ? art.lat : p.lat, lon = art.lon != null ? art.lon : p.lon;
+  state.current = { title: art.title, description: art.description || p.description, lat, lon, thumb: p.thumb || art.image };
+  addRecent(state.current); updateSaveBtn();
+
+  const secs = parseSections(art.extract);
+  const cat = categoryOf(art.title, art.description);
+  const facts = funFacts(art.extract, art.title);
+  const historySec = secs.find(s => /^(history|historical background|background)$/i.test(s.title) && s.text.length > 80) ||
+                     secs.find(s => /history/i.test(s.title) && s.text.length > 80);
+
+  // Render skeleton
+  C.innerHTML =
+    (art.image ? '<img class="himg" alt="" src="' + esc(art.image) + '">' : "") +
+    '<div class="dhead"><h2>' + esc(art.title) + ' <span class="badge">' + CAT_ICON[cat] + " " + cat + '</span></h2><div class="sub">' + esc(art.description || "") + '</div></div>' +
+    '<div class="dbody">' +
+      '<div class="card prose"><p>' + esc(trimToSentences(secs[0].text, 600)) + '</p>' +
+        '<div class="row"><button class="btn small" id="goTour">🎧 Start guided tour</button><button class="btn secondary small" id="goExplore">🧭 Explore around here</button></div></div>' +
+      '<div id="factsBox"></div>' +
+      '<div class="card"><h3>🗺️ Getting there</h3><div id="wayBox">' + spinner() + '</div></div>' +
+      '<div class="card"><h3>🎒 Before you go</h3><div id="tipsBox">' + spinner() + '</div></div>' +
+      (facts.length ? '<div class="card"><h3>💡 Did you know?</h3><ul class="tips dyk">' + facts.map(f => '<li>' + esc(f) + '</li>').join("") + '</ul></div>' : "") +
+      '<div class="card"><h3>📜 History</h3><div class="prose clamp" id="histBox">' +
+        paras(historySec ? historySec.text : secs[0].text).slice(0, 12).map(x => '<p>' + esc(x) + '</p>').join("") +
+        '</div><button class="btn ghost small" id="histMore">Read more</button></div>' +
+      '<div class="card" id="tourCard"><h3>🎧 Guided tour</h3><div id="tourBox">' + spinner() + '</div></div>' +
+      '<div class="card"><h3>📍 Continue exploring nearby</h3><div id="nextBox">' + spinner() + '</div></div>' +
+    '</div>' +
+    '<div class="attrib">Content from <a href="' + esc(art.url) + '" target="_blank" rel="noopener">Wikipedia</a>, Wikidata, Wikivoyage (CC BY-SA), weather by Open-Meteo, places © OpenStreetMap contributors. Tips are general guidance — always check official timings.</div>';
+
+  $("#histMore").addEventListener("click", () => { const h = $("#histBox"); const open = h.classList.toggle("clamp"); $("#histMore").textContent = open ? "Read more" : "Show less"; });
+  $("#goTour").addEventListener("click", () => { $("#tourCard").scrollIntoView({ behavior: "smooth" }); if (state.tour) playStop(state.tour.idx); });
+  $("#goExplore").addEventListener("click", () => exploreAround(state.current));
+
+  // Parallel loads
+  const facts$ = fetchFacts(art.qid).then(list => {
+    if (!list.length) return;
+    $("#factsBox").innerHTML = '<div class="card"><h3>📋 Quick facts</h3><div class="facts">' +
+      list.map(f => '<div class="fact"><div class="fk">' + esc(f.label) + '</div><div class="fv">' + esc(f.value) + '</div></div>').join("") + '</div></div>';
+  });
+
+  const weather$ = fetchWeather(lat, lon);
+  const addr$ = reverseGeocode(lat, lon, 10);
+
+  // Getting there
+  (async () => {
+    const box = $("#wayBox");
+    let me = state.me;
+    if (!me){
+      box.innerHTML = '<p class="small muted" style="margin:0 0 8px">Share your location to see distance and the best way to get there.</p><button class="btn small" id="wayLoc">📍 Use my location</button>' + wayLinks(null, lat, lon);
+      $("#wayLoc").addEventListener("click", async () => {
+        box.innerHTML = spinner();
+        try { state.me = await locate(); store.set("lastLoc", state.me); renderWay(box, state.me, lat, lon); }
+        catch(e){ box.innerHTML = '<p class="small">' + esc(e.message) + '</p>' + wayLinks(null, lat, lon); }
+      });
+      return;
+    }
+    renderWay(box, me, lat, lon);
+  })();
+
+  // Tips + Wikivoyage
+  (async () => {
+    const [weather, addr] = await Promise.all([weather$, addr$]);
+    const tips = generalTips(cat, weather, art.title);
+    let html = "";
+    if (weather && weather.current){
+      const cur = weather.current, d = weather.daily;
+      html += '<div class="rec" style="margin-block-end:10px"><b>' + WMO(cur.weather_code) + ', ' + Math.round(cur.temperature_2m) + '°C now</b>' +
+        '<div class="small muted">Today ' + Math.round(d.temperature_2m_min[0]) + '–' + Math.round(d.temperature_2m_max[0]) + '°C · rain chance ' + (d.precipitation_probability_max[0] ?? 0) + '%' +
+        (d.sunset && d.sunset[0] ? ' · sunset ' + d.sunset[0].slice(11, 16) : "") + '</div></div>';
+    }
+    html += '<ul class="tips">' + tips.map(t => '<li>' + esc(t) + '</li>').join("") + '</ul>';
+    $("#tipsBox").innerHTML = html + '<div id="wvBox" class="small muted" style="margin-block-start:8px">Looking up local travel advice…</div>';
+    const city = cityOf(addr);
+    const wv = await fetchWikivoyage([art.title, city, addr && addr.state_district, addr && addr.state], art.title);
+    const wvBox = $("#wvBox"); if (!wvBox) return;
+    if (!wv || (!wv.sections.length && !wv.mentions.length)){ wvBox.textContent = ""; return; }
+    let w = '<div class="section-title" style="margin-block-start:10px">Local travel advice · ' + esc(wv.title) + '</div>';
+    if (wv.mentions.length){
+      w += '<details class="wv" open><summary>What travellers say about ' + esc(art.title) + '</summary><div class="prose" style="margin-block-start:6px">' +
+        wv.mentions.map(m => '<p>' + esc(trimToSentences(m, 600)) + '</p>').join("") + '</div></details>';
+    }
+    wv.sections.forEach(s => {
+      w += '<details class="wv"><summary>' + esc(s.title) + '</summary><div class="prose" style="margin-block-start:6px;color:var(--text)">' +
+        paras(s.text).filter(x => !/^=/.test(x)).slice(0, 5).map(x => '<p>' + esc(trimToSentences(x, 500)) + '</p>').join("") + '</div></details>';
+    });
+    w += '<p class="small"><a href="' + esc(wv.url) + '" target="_blank" rel="noopener">Full travel guide on Wikivoyage →</a></p>';
+    wvBox.className = ""; wvBox.innerHTML = w;
+  })();
+
+  // Nearby + tour
+  (async () => {
+    let next = [];
+    try {
+      next = (await geoSearch(lat, lon, 3000, 40)).filter(x => x.title !== art.title && x.score >= 2).sort((a, b) => a.km - b.km).slice(0, 6);
+    } catch(e){}
+    const nb = $("#nextBox");
+    if (nb){
+      nb.innerHTML = next.length ? '<div class="list">' + next.map((x, i) => itemHTML(x, i, true)).join("") + '</div>' : '<p class="small muted">No other well-known spots within 3 km.</p>';
+      bindList(nb, next);
+    }
+    state.tour = { stops: buildTour(art, secs, next), idx: 0, playing: false };
+    renderTour();
+    if (opts.tour) setTimeout(() => $("#tourCard") && $("#tourCard").scrollIntoView({ behavior: "smooth" }), 300);
+  })();
+}
+
+function wayLinks(me, lat, lon){
+  const dest = lat + "," + lon;
+  const sa = me ? "&saddr=" + me.lat + "," + me.lon : "";
+  const g = "https://www.google.com/maps/dir/?api=1&destination=" + dest + (me ? "&origin=" + me.lat + "," + me.lon : "");
+  return '<div class="waygrid" style="margin-block-start:10px">' +
+    '<a href="https://maps.apple.com/?daddr=' + dest + sa + '&dirflg=w" target="_blank" rel="noopener">🚶<br>Walk</a>' +
+    '<a href="https://maps.apple.com/?daddr=' + dest + sa + '&dirflg=r" target="_blank" rel="noopener">🚇<br>Transit</a>' +
+    '<a href="https://maps.apple.com/?daddr=' + dest + sa + '&dirflg=d" target="_blank" rel="noopener">🚗<br>Drive</a>' +
+    '</div><p class="small" style="margin:8px 0 0">Opens Apple Maps. Prefer Google Maps? <a href="' + g + '&travelmode=transit" target="_blank" rel="noopener">Transit</a> · <a href="' + g + '&travelmode=driving" target="_blank" rel="noopener">Driving</a> · <a href="' + g + '&travelmode=walking" target="_blank" rel="noopener">Walking</a></p>';
+}
+async function renderWay(box, me, lat, lon){
+  const km = distKm(me, { lat, lon });
+  const rec = recommendTravel(km);
+  box.innerHTML = '<div class="way"><div class="rec"><b>' + rec.icon + " " + fmtDist(km) + ' away (straight line)</b><div class="small" style="margin-block-start:4px">' + esc(rec.text) + '</div><div class="small muted" id="driveEst"></div></div>' + wayLinks(me, lat, lon) + '</div>';
+  if (km > 0.3 && km < 1500){
+    const d = await driveEstimate(me, { lat, lon });
+    const el = $("#driveEst");
+    if (d && el) el.textContent = "By road: about " + fmtDist(d.km) + ", roughly " + fmtDur(d.min) + " by car without traffic.";
+  }
+}
+
+async function exploreAround(p){
+  closeDetail(true);
+  showView("nearby");
+  state.me = state.me || null;
+  const list = $("#nearbyList");
+  list.innerHTML = spinner();
+  $("#startCard").style.display = "none";
+  $("#hereCard").innerHTML = '<div class="card"><div class="small muted">Exploring around</div><div style="font-weight:700;font-size:17px">' + esc(p.title) + '</div><button class="btn ghost small" id="backToMe" style="padding-inline:0">← Back to my location</button></div>';
+  $("#backToMe").addEventListener("click", () => { $("#hereCard").innerHTML = ""; loadNearby(false); });
+  try {
+    const all = await geoSearch(p.lat, p.lon, 10000, 50);
+    const spots = all.filter(x => x.score >= 2).sort((a, b) => a.km - b.km);
+    const ref = state.me;
+    if (ref) spots.forEach(x => x.km = distKm(ref, x));
+    state.nearby = spots;
+    list.innerHTML = spots.length ? '<div class="section-title">Tourist spots within 10 km of ' + esc(p.title) + '</div><div class="list">' + spots.map((x, i) => itemHTML(x, i, !!ref)).join("") + '</div>' : '<div class="empty">No well-known spots found around here.</div>';
+    bindList(list, spots);
+  } catch(e){ list.innerHTML = '<div class="empty">Couldn’t load places. Check your internet connection.</div>'; }
+}
+
+/* ---------------- guided tour (speech) ---------------- */
+const synth = window.speechSynthesis;
+let speakToken = 0;
+function pickVoice(){
+  if (!synth) return null;
+  const vs = synth.getVoices();
+  return vs.find(v => /en-IN/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang) && /daniel|serena|kate/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null;
+}
+function renderTour(){
+  const box = $("#tourBox"); if (!box || !state.tour) return;
+  const T = state.tour, s = T.stops[T.idx];
+  const rate = store.get("rate", 1);
+  box.innerHTML =
+    '<div class="player"><div class="small" style="opacity:.85">Stop ' + (T.idx + 1) + ' of ' + T.stops.length + '</div>' +
+    '<div class="stopname">' + esc(s.name) + '</div>' +
+    '<div class="ctrl"><button id="tPrev" aria-label="Previous">⏮</button><button class="play" id="tPlay" aria-label="Play">' + (T.playing ? "⏸" : "▶") + '</button><button id="tNext" aria-label="Next">⏭</button></div>' +
+    '<div class="row" style="justify-content:center;margin-block-start:8px"><span class="small">Speed</span><select id="tRate">' +
+      [0.8, 0.9, 1, 1.1, 1.25].map(r => '<option value="' + r + '"' + (r === rate ? " selected" : "") + '>' + r + '×</option>').join("") + '</select></div></div>' +
+    (synth ? "" : '<p class="small muted">Audio narration isn’t available on this browser — you can still read the tour below.</p>') +
+    '<ol class="stops">' + T.stops.map((x, i) => '<li class="' + (i === T.idx ? "cur" : "") + '" data-i="' + i + '"><div class="sn">' + (i + 1) + '. ' + esc(x.name) + '</div>' + (i === T.idx ? '<div class="st">' + esc(x.text) + '</div>' : "") + '</li>').join("") + '</ol>';
+  $("#tPlay").addEventListener("click", () => { if (T.playing) stopSpeech(); else playStop(T.idx); });
+  $("#tPrev").addEventListener("click", () => playStop(Math.max(0, T.idx - 1), !T.playing));
+  $("#tNext").addEventListener("click", () => playStop(Math.min(T.stops.length - 1, T.idx + 1), !T.playing));
+  $("#tRate").addEventListener("change", e => { store.set("rate", +e.target.value); if (T.playing) playStop(T.idx); });
+  $$(".stops li", box).forEach(li => li.addEventListener("click", () => playStop(+li.dataset.i, !T.playing)));
+}
+function stopSpeech(){
+  speakToken++;
+  if (synth) synth.cancel();
+  if (state.tour){ state.tour.playing = false; const b = $("#tPlay"); if (b) b.textContent = "▶"; }
+}
+function playStop(i, silent){
+  const T = state.tour; if (!T) return;
+  stopSpeech();
+  T.idx = i;
+  if (silent || !synth){ renderTour(); return; }
+  T.playing = true; renderTour();
+  const token = ++speakToken;
+  const chunks = [T.stops[i].name + "."].concat(sentences(T.stops[i].text));
+  const voice = pickVoice(), rate = store.get("rate", 1);
+  let k = 0;
+  const speakNext = () => {
+    if (token !== speakToken) return;
+    if (k >= chunks.length){
+      if (T.idx < T.stops.length - 1){ setTimeout(() => { if (token === speakToken) playStop(T.idx + 1); }, 700); }
+      else { T.playing = false; renderTour(); }
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(chunks[k++]);
+    if (voice){ u.voice = voice; u.lang = voice.lang; } else u.lang = "en-IN";
+    u.rate = rate;
+    u.addEventListener("end", speakNext);
+    u.addEventListener("error", speakNext);
+    synth.speak(u);
+  };
+  speakNext();
+}
+if (synth && "onvoiceschanged" in synth) synth.addEventListener("voiceschanged", () => {});
+
+/* ---------------- detail navigation ---------------- */
+function closeDetail(fromCode){
+  stopSpeech();
+  const det = $("#detail");
+  if (!det.classList.contains("open")) return;
+  det.classList.remove("open");
+  if (fromCode !== "pop" && history.state && history.state.d) history.back();
+  if (document.querySelector("#view-saved.active")) renderSaved();
+}
+$("#btnBack").addEventListener("click", () => closeDetail(false));
+window.addEventListener("popstate", () => closeDetail("pop"));
+
+/* ---------------- init ---------------- */
+renderSuggest();
+const last = store.get("lastLoc", null);
+if (last && navigator.permissions && navigator.permissions.query){
+  navigator.permissions.query({ name: "geolocation" }).then(r => { if (r.state === "granted") loadNearby(false); }).catch(() => {});
+}
+})();
+</script>
+</body>
+</html>
