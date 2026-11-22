@@ -1,6 +1,8 @@
 /* e-Tourist Guide – offline support. Keep this file next to the app (index.html). */
 const SHELL = "etg-shell-v2";
 const IMG = "etg-img-v1";
+const TILES = "etg-tiles-v1";
+const LIB = "etg-lib-v1";
 
 async function cleanCopy(r) {
   // drop the "redirected" flag so the saved page can be served to Safari later
@@ -35,6 +37,8 @@ self.addEventListener("fetch", event => {
   const req = event.request;
   if (req.method !== "GET") return;
   if (req.mode === "navigate") { event.respondWith(pageStrategy(req)); return; }
+  if (req.url.startsWith("https://tile.openstreetmap.org/")) { event.respondWith(tileStrategy(req)); return; }
+  if (req.url.startsWith("https://cdn.jsdelivr.net/npm/leaflet@")) { event.respondWith(libStrategy(req)); return; }
   if (req.destination === "image" && req.url.startsWith("http")) { event.respondWith(imageStrategy(req)); return; }
 });
 
@@ -79,4 +83,26 @@ async function imageStrategy(req) {
 async function trim(c, max) {
   const keys = await c.keys();
   for (let i = 0; i < keys.length - max; i++) await c.delete(keys[i]);
+}
+
+// Map library: keep a copy so the map can open without signal.
+async function libStrategy(req) {
+  const hit = await caches.match(req.url);
+  if (hit) return hit;
+  const r = await fetch(req);
+  if (r.ok && r.type !== "opaque") (await caches.open(LIB)).put(req.url, r.clone()).catch(() => {});
+  return r;
+}
+
+// Map tiles: remember tiles you've already looked at (up to about 600), so recently viewed areas show offline.
+async function tileStrategy(req) {
+  const c = await caches.open(TILES);
+  const hit = await c.match(req.url);
+  if (hit) return hit;
+  try {
+    let r;
+    try { r = await fetch(req.url, { mode: "cors" }); } catch (e) { r = null; }
+    if (r && r.ok) { c.put(req.url, r.clone()).then(() => trim(c, 600)).catch(() => {}); return r; }
+    return await fetch(req);
+  } catch (e) { return Response.error(); }
 }

@@ -132,6 +132,38 @@ details.wv summary{font-weight:600;cursor:pointer}
 .note{background:var(--brand-soft);border-radius:12px;padding:10px 12px;font-size:13px;margin-block-end:10px}
 .player select{max-inline-size:62vw}
 .roundbtn:disabled{opacity:.6}
+/* map */
+#map{block-size:calc(100vh - 200px);block-size:calc(100dvh - 190px - var(--safe-top) - var(--safe-bottom));min-block-size:320px;border-radius:16px;overflow:hidden;position:relative;z-index:0;background:var(--brand-soft)}
+.mapbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-block-end:8px}
+.pin{background:none;border:0}
+.pinb{inline-size:34px;block-size:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--brand);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
+.pinb span{transform:rotate(45deg);font-size:16px;line-height:1}
+.pinb.off{background:#15803d}
+.leaflet-popup-content{margin:10px 12px;font-family:inherit}
+.pop .pn{font-weight:700;font-size:15px;margin-block-end:2px}
+.pop .pd{font-size:12px;color:#555;margin-block-end:8px}
+.pop .row button,.pop .row a{font-size:13px;padding:6px 10px;border-radius:9px;border:0;background:#0e7490;color:#fff;text-decoration:none;font-weight:600}
+.pop .row a{background:#e0f2f7;color:#0e7490}
+/* photos */
+.gallery{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-block-end:4px}
+.gallery img{flex:0 0 auto;inline-size:170px;block-size:124px;object-fit:cover;border-radius:10px;scroll-snap-align:start;background:var(--brand-soft);cursor:pointer}
+.lightbox{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.94);display:none;flex-direction:column;justify-content:center;align-items:center;padding:calc(var(--safe-top) + 50px) 0 calc(var(--safe-bottom) + 12px)}
+.lightbox.open{display:flex}
+.lightbox img{max-inline-size:100%;max-block-size:72vh;object-fit:contain}
+.lbcap{color:#e5e7eb;font-size:13px;padding:10px 16px;text-align:center;max-inline-size:680px}
+.lbcap a{color:#7dd3fc}
+.lbbtn{position:absolute;background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:50%;inline-size:44px;block-size:44px;font-size:22px}
+#lbClose{top:calc(var(--safe-top) + 10px);inset-inline-end:12px}
+#lbPrev{inset-inline-start:8px;top:45%}
+#lbNext{inset-inline-end:8px;top:45%}
+/* hours */
+table.hours{border-collapse:collapse;inline-size:100%;font-size:14px}
+table.hours td{padding:5px 2px;border-block-end:1px solid var(--line)}
+table.hours td:last-child{text-align:end}
+table.hours tr.today td{font-weight:700;color:var(--brand)}
+.kv{display:flex;flex-wrap:wrap;gap:6px;margin-block-start:10px}
+.kv span{background:var(--brand-soft);border-radius:999px;padding:4px 10px;font-size:13px}
+.gbtn{display:block;text-align:center;text-decoration:none;background:var(--brand);color:#fff;border-radius:12px;padding:10px;font-weight:600;margin-block-start:8px}
 </style>
 </head>
 <body>
@@ -168,6 +200,14 @@ details.wv summary{font-weight:600;cursor:pointer}
       <div id="areaDl"></div>
     </section>
 
+    <!-- MAP -->
+    <section class="view" id="view-map">
+      <div class="mapbar"><div class="small muted" id="mapInfo">Tourist spots on the map</div>
+        <div class="row"><button class="btn secondary small" id="mapArea" style="display:none">🔍 Search this area</button><button class="btn small" id="mapMe">📍 Me</button></div></div>
+      <div id="mapMsg"></div>
+      <div id="map"></div>
+    </section>
+
     <!-- SEARCH -->
     <section class="view" id="view-search">
       <form class="searchbox" id="searchForm" autocomplete="off">
@@ -196,6 +236,7 @@ details.wv summary{font-weight:600;cursor:pointer}
 
   <nav class="tabs" id="tabs">
     <button class="on" data-v="nearby"><span class="ic">🧭</span>Nearby</button>
+    <button data-v="map"><span class="ic">🗺️</span>Map</button>
     <button data-v="search"><span class="ic">🔍</span>Search</button>
     <button data-v="saved"><span class="ic">⭐</span>Saved</button>
   </nav>
@@ -213,6 +254,14 @@ details.wv summary{font-weight:600;cursor:pointer}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="lightbox" id="lb">
+  <button class="lbbtn" id="lbClose" aria-label="Close">✕</button>
+  <button class="lbbtn" id="lbPrev" aria-label="Previous photo">‹</button>
+  <img id="lbImg" alt="">
+  <button class="lbbtn" id="lbNext" aria-label="Next photo">›</button>
+  <div class="lbcap" id="lbCap"></div>
+</div>
 
 <script>
 (function(){
@@ -253,7 +302,7 @@ const DATA_CACHE = "etg-data-v1", PIN_CACHE = "etg-pin-v1", IMG_CACHE = "etg-img
 const HAS_CACHE = typeof caches !== "undefined";
 const memo = new Map();
 const cachedAt = new Map();
-let lastNominatim = 0, lastCacheUse = 0;
+let lastNominatim = 0, lastOverpass = 0, lastCacheUse = 0;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function putText(cacheName, url, text){
   if (!HAS_CACHE) return;
@@ -277,6 +326,10 @@ async function readCache(url){
 async function netText(url, timeoutMs){
   if (url.indexOf("nominatim.openstreetmap.org") >= 0){            // respect 1 request/second
     const slot = Math.max(Date.now(), lastNominatim + 1100); lastNominatim = slot;
+    if (slot > Date.now()) await sleep(slot - Date.now());
+  }
+  if (url.indexOf("overpass-api.de") >= 0){                          // be gentle with the free server
+    const slot = Math.max(Date.now(), lastOverpass + 1200); lastOverpass = slot;
     if (slot > Date.now()) await sleep(slot - Date.now());
   }
   const ctl = new AbortController();
@@ -394,13 +447,14 @@ function categoryOf(title, desc){
 const CAT_ICON = { religious:"🛕", heritage:"🏰", museum:"🏛️", beach:"🏖️", nature:"⛰️", park:"🌳", market:"🛍️", general:"📍" };
 
 /* ---------------- state ---------------- */
-const state = { me: null, radius: 5000, nearby: [], current: null, tour: null };
+const state = { me: null, radius: 5000, nearby: [], current: null, tour: null, mapPlaces: [], mapVer: 0, openToken: 0, gallery: [] };
 
 /* ---------------- tabs ---------------- */
 function showView(v){
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "view-" + v));
   $$("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
   if (v === "saved") renderSaved();
+  if (v === "map") showMap();
   if (v === "search") setTimeout(() => $("#q").focus(), 50);
   window.scrollTo(0, 0);
 }
@@ -531,6 +585,7 @@ function renderNearby(){
   const v = state.nearbyView; if (!v) return;
   const list = $("#nearbyList");
   state.nearby = v.spots.concat(v.others);
+  state.mapPlaces = v.spots; state.mapVer++;
   const here = v.spots.find(p => p.km <= 0.35);
   const hc = $("#hereCard");
   if (here){
@@ -847,6 +902,7 @@ function recommendTravel(km){
 async function openPlace(p, opts){
   opts = opts || {};
   stopSpeech();
+  const token = ++state.openToken, alive = () => token === state.openToken;
   state.current = placeLite(p);
   updateSaveBtn(); updateDlBtn();
   const det = $("#detail");
@@ -859,7 +915,7 @@ async function openPlace(p, opts){
   let art;
   try { art = await fetchArticle(p.title); }
   catch(e){ C.innerHTML = C.innerHTML.replace(spinner(), "") + '<div class="card" style="margin:12px 16px"><b>Couldn’t load this place.</b><p class="small muted" style="margin:6px 0 0">There’s no signal and this place isn’t downloaded yet. Tip: while you have Wi-Fi, tap ⬇ on places you plan to visit, or use “Download this area”.</p></div>'; return; }
-  if (state.current.title !== p.title && state.current.title !== art.title) return; // user moved on
+  if (token !== state.openToken) return; // user moved on
   const lat = art.lat != null ? art.lat : p.lat, lon = art.lon != null ? art.lon : p.lon;
   state.current = { title: art.title, description: art.description || p.description, lat, lon, thumb: p.thumb || art.image };
   addRecent(state.current); updateSaveBtn(); updateDlBtn();
@@ -877,6 +933,8 @@ async function openPlace(p, opts){
     '<div class="dbody">' +
       '<div class="card prose"><p>' + esc(trimToSentences(secs[0].text, 600)) + '</p>' +
         '<div class="row"><button class="btn small" id="goTour">🎧 Start guided tour</button><button class="btn secondary small" id="goExplore">🧭 Explore around here</button></div></div>' +
+      '<div class="card" id="photoCard"><h3>📷 Photos</h3><div id="galBox">' + spinner() + '</div></div>' +
+      '<div class="card"><h3>🕒 Opening hours & entry</h3><div id="hoursBox">' + spinner() + '</div></div>' +
       '<div id="factsBox"></div>' +
       '<div class="card"><h3>🗺️ Getting there</h3><div id="wayBox">' + spinner() + '</div></div>' +
       '<div class="card"><h3>🎒 Before you go</h3><div id="tipsBox">' + spinner() + '</div></div>' +
@@ -887,7 +945,7 @@ async function openPlace(p, opts){
       '<div class="card" id="tourCard"><h3>🎧 Guided tour</h3><div id="tourBox">' + spinner() + '</div></div>' +
       '<div class="card"><h3>📍 Continue exploring nearby</h3><div id="nextBox">' + spinner() + '</div></div>' +
     '</div>' +
-    '<div class="attrib">Content from <a href="' + esc(art.url) + '" target="_blank" rel="noopener">Wikipedia</a>, Wikidata, Wikivoyage (CC BY-SA), weather by Open-Meteo, places © OpenStreetMap contributors. Tips are general guidance — always check official timings.</div>';
+    '<div class="attrib">Content from <a href="' + esc(art.url) + '" target="_blank" rel="noopener">Wikipedia</a>, Wikidata, Wikivoyage (CC BY-SA), photos from Wikimedia Commons (credits on each photo), opening hours and map © OpenStreetMap contributors, weather by Open-Meteo. Tips are general guidance — always check official timings.</div>';
 
   $("#histMore").addEventListener("click", () => { const h = $("#histBox"); const open = h.classList.toggle("clamp"); $("#histMore").textContent = open ? "Read more" : "Show less"; });
   $("#goTour").addEventListener("click", () => { $("#tourCard").scrollIntoView({ behavior: "smooth" }); if (state.tour) playStop(state.tour.idx); });
@@ -895,13 +953,36 @@ async function openPlace(p, opts){
 
   // Parallel loads
   const facts$ = fetchFacts(art.qid).then(list => {
-    if (!list.length) return;
+    if (!list.length || !alive()) return;
     $("#factsBox").innerHTML = '<div class="card"><h3>📋 Quick facts</h3><div class="facts">' +
       list.map(f => '<div class="fact"><div class="fk">' + esc(f.label) + '</div><div class="fv">' + esc(f.value) + '</div></div>').join("") + '</div></div>';
   });
 
   const weather$ = fetchWeather(lat, lon);
   const addr$ = reverseGeocode(lat, lon, 10);
+
+  // Photos
+  (async () => {
+    const pics = await fetchGallery(art).catch(() => []);
+    if (!alive()) return;
+    const gb = $("#galBox");
+    if (!pics.length){ $("#photoCard").style.display = "none"; return; }
+    state.gallery = pics;
+    gb.innerHTML = '<div class="gallery">' + pics.map((g, i) => '<img loading="lazy" alt="' + esc(g.desc || art.title) + '" src="' + esc(g.thumb) + '" data-i="' + i + '">').join("") + '</div>' +
+      '<div class="small muted" style="margin-block-start:6px">' + pics.length + ' photo' + (pics.length > 1 ? "s" : "") + ' from Wikimedia Commons · tap to enlarge, swipe to browse</div>';
+    $$("img", gb).forEach(im => {
+      im.addEventListener("click", () => openLightbox(+im.dataset.i));
+      im.addEventListener("error", () => im.remove());
+    });
+  })();
+
+  // Opening hours
+  (async () => {
+    const tags = await fetchHours(art.qid, lat, lon, art.title);
+    const addr = await addr$;
+    if (!alive()) return;
+    renderHours($("#hoursBox"), tags, gPlace(art.title, lat, lon, cityOf(addr)));
+  })();
 
   // Getting there
   (async () => {
@@ -922,6 +1003,7 @@ async function openPlace(p, opts){
   // Tips + Wikivoyage
   (async () => {
     let [weather, addr] = await Promise.all([weather$, addr$]);
+    if (!alive()) return;
     if (weather && weather._cachedAt && Date.now() - weather._cachedAt > 36 * 3600e3) weather = null;  // too old to be useful
     const tips = generalTips(cat, weather, art.title);
     let html = "";
@@ -936,7 +1018,7 @@ async function openPlace(p, opts){
     $("#tipsBox").innerHTML = html + '<div id="wvBox" class="small muted" style="margin-block-start:8px">Looking up local travel advice…</div>';
     const city = cityOf(addr);
     const wv = await fetchWikivoyage([art.title, city, addr && addr.state_district, addr && addr.state], art.title);
-    const wvBox = $("#wvBox"); if (!wvBox) return;
+    const wvBox = $("#wvBox"); if (!wvBox || !alive()) return;
     if (!wv || (!wv.sections.length && !wv.mentions.length)){ wvBox.textContent = ""; return; }
     let w = '<div class="section-title" style="margin-block-start:10px">Local travel advice · ' + esc(wv.title) + '</div>';
     if (wv.mentions.length){
@@ -957,6 +1039,7 @@ async function openPlace(p, opts){
     try {
       next = (await geoSearch(lat, lon, 3000, 40)).filter(x => x.title !== art.title && x.score >= 2).sort((a, b) => a.km - b.km).slice(0, 6);
     } catch(e){}
+    if (!alive()) return;
     const nb = $("#nextBox");
     if (nb){
       nb.innerHTML = next.length ? '<div class="list">' + next.map((x, i) => itemHTML(x, i, true)).join("") + '</div>' : '<p class="small muted">No other well-known spots within 3 km.</p>';
@@ -968,20 +1051,24 @@ async function openPlace(p, opts){
   })();
 }
 
+function gDir(lat, lon, mode){ return "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lon + (mode ? "&travelmode=" + mode : ""); }
+function gPlace(name, lat, lon, city){
+  const q = name ? name + (city ? ", " + city : "") : lat + "," + lon;
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+}
 function wayLinks(me, lat, lon){
-  const dest = lat + "," + lon;
-  const sa = me ? "&saddr=" + me.lat + "," + me.lon : "";
-  const g = "https://www.google.com/maps/dir/?api=1&destination=" + dest + (me ? "&origin=" + me.lat + "," + me.lon : "");
+  const name = state.current && state.current.title;
   return '<div class="waygrid" style="margin-block-start:10px">' +
-    '<a href="https://maps.apple.com/?daddr=' + dest + sa + '&dirflg=w" target="_blank" rel="noopener">🚶<br>Walk</a>' +
-    '<a href="https://maps.apple.com/?daddr=' + dest + sa + '&dirflg=r" target="_blank" rel="noopener">🚇<br>Transit</a>' +
-    '<a href="https://maps.apple.com/?daddr=' + dest + sa + '&dirflg=d" target="_blank" rel="noopener">🚗<br>Drive</a>' +
-    '</div><p class="small" style="margin:8px 0 0">Opens Apple Maps. Prefer Google Maps? <a href="' + g + '&travelmode=transit" target="_blank" rel="noopener">Transit</a> · <a href="' + g + '&travelmode=driving" target="_blank" rel="noopener">Driving</a> · <a href="' + g + '&travelmode=walking" target="_blank" rel="noopener">Walking</a></p>';
+    '<a href="' + gDir(lat, lon, "walking") + '" target="_blank" rel="noopener">🚶<br>Walk</a>' +
+    '<a href="' + gDir(lat, lon, "transit") + '" target="_blank" rel="noopener">🚇<br>Transit</a>' +
+    '<a href="' + gDir(lat, lon, "driving") + '" target="_blank" rel="noopener">🚗<br>Drive</a>' +
+    '</div><a class="gbtn" href="' + esc(gPlace(name, lat, lon)) + '" target="_blank" rel="noopener">📍 Open in Google Maps</a>' +
+    '<p class="small muted" style="margin:6px 0 0">Directions start from where you are. Opens the Google Maps app if it’s installed.</p>';
 }
 async function renderWay(box, me, lat, lon){
   const km = distKm(me, { lat, lon });
   const rec = recommendTravel(km);
-  const offHint = navigator.onLine === false ? '<p class="small muted" style="margin:8px 0 0">No signal? Apple Maps can still guide you if you downloaded an offline map of this area (Maps → tap your profile picture → Offline Maps).</p>' : "";
+  const offHint = navigator.onLine === false ? '<p class="small muted" style="margin:8px 0 0">No signal? Google Maps can still guide you if you downloaded an offline map of this area (Google Maps app → tap your profile picture → Offline maps → Select your own map).</p>' : "";
   box.innerHTML = '<div class="way"><div class="rec"><b>' + rec.icon + " " + fmtDist(km) + ' away (straight line)</b><div class="small" style="margin-block-start:4px">' + esc(rec.text) + '</div><div class="small muted" id="driveEst"></div></div>' + wayLinks(me, lat, lon) + offHint + '</div>';
   if (km > 0.3 && km < 1500){
     const d = await driveEstimate(me, { lat, lon });
@@ -1006,11 +1093,293 @@ async function exploreAround(p){
     const ref = state.me;
     if (ref) spots.forEach(x => x.km = distKm(ref, x));
     state.nearby = spots;
+    state.mapPlaces = spots; state.mapVer++;
     if (spots.length) renderAreaDl(spots, p.title); else $("#areaDl").innerHTML = "";
     list.innerHTML = spots.length ? '<div class="section-title">Tourist spots within 10 km of ' + esc(p.title) + '</div><div class="list">' + spots.map((x, i) => itemHTML(x, i, !!ref)).join("") + '</div>' : '<div class="empty">No well-known spots found around here.</div>';
     bindList(list, spots);
   } catch(e){ list.innerHTML = '<div class="empty">Couldn’t load places. Check your internet connection.</div>'; }
 }
+
+/* ---------------- photo gallery ---------------- */
+const strip = h => String(h || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+const BAD_IMG = /(logo|map|flag|icon|symbol|seal|emblem|coat[_ ]of[_ ]arms|locator|location|diagram|signature|commons-|wikipedia|wiki-|question[_ ]book|ambox|edit-clear|padlock|crystal|nuvola|disambig|portal|stub|\.svg)/i;
+async function fetchGallery(art, o){
+  const out = [], seen = new Set();
+  const IIP = { prop: "imageinfo", iiprop: "url|size|extmetadata", iiurlwidth: 640, iiextmetadatafilter: "Artist|LicenseShortName|ImageDescription" };
+  const add = pages => (pages || []).forEach(p => {
+    const ii = p.imageinfo && p.imageinfo[0];
+    if (!ii || !ii.thumburl || seen.has(p.title)) return;
+    if (!/\.(jpe?g|png|webp)$/i.test(p.title) || BAD_IMG.test(p.title)) return;
+    if ((ii.width || 0) < 400 || (ii.height || 0) < 250) return;
+    const md = ii.extmetadata || {}, v = k => md[k] && md[k].value;
+    seen.add(p.title);
+    out.push({ thumb: ii.thumburl, page: ii.descriptionurl || "", artist: strip(v("Artist")).slice(0, 80), license: strip(v("LicenseShortName")), desc: strip(v("ImageDescription")).slice(0, 220) });
+  });
+  try {
+    const d = await getJSON(mwURL(WP, Object.assign({ action: "query", generator: "images", titles: art.title, gimlimit: 50 }, IIP)), 15000, o);
+    add(d.query && d.query.pages);
+  } catch(e){}
+  if (out.length < 12 && art.qid){
+    try {
+      const c = await getJSON(mwURL(WD, { action: "wbgetentities", ids: art.qid, props: "claims" }), 12000, o);
+      const ent = c.entities && c.entities[art.qid];
+      const cl = ent && ent.claims && ent.claims.P373;
+      const cat = cl && cl[0] && cl[0].mainsnak && cl[0].mainsnak.datavalue && cl[0].mainsnak.datavalue.value;
+      if (cat){
+        const d2 = await getJSON(mwURL("commons.wikimedia.org", Object.assign({ action: "query", generator: "categorymembers", gcmtitle: "Category:" + cat, gcmtype: "file", gcmlimit: 40 }, IIP)), 15000, o);
+        add(d2.query && d2.query.pages);
+      }
+    } catch(e){}
+  }
+  return out.slice(0, 24);
+}
+let lbIdx = 0, lbX = null;
+function openLightbox(i){ lbIdx = i; renderLb(); $("#lb").classList.add("open"); }
+function closeLightbox(){ $("#lb").classList.remove("open"); }
+function renderLb(){
+  const g = state.gallery[lbIdx]; if (!g) return;
+  $("#lbImg").src = g.thumb; $("#lbImg").alt = g.desc || "";
+  $("#lbCap").innerHTML = (g.desc ? esc(g.desc) + '<br>' : "") + '<span style="opacity:.75">' + (lbIdx + 1) + ' / ' + state.gallery.length +
+    ' · Photo: ' + esc(g.artist || "Unknown") + (g.license ? ' · ' + esc(g.license) : "") +
+    (g.page ? ' · <a href="' + esc(g.page) + '" target="_blank" rel="noopener">source</a>' : "") + '</span>';
+}
+function lbStep(d){ const n = state.gallery.length; if (!n) return; lbIdx = (lbIdx + d + n) % n; renderLb(); }
+$("#lbClose").addEventListener("click", closeLightbox);
+$("#lbPrev").addEventListener("click", () => lbStep(-1));
+$("#lbNext").addEventListener("click", () => lbStep(1));
+$("#lb").addEventListener("touchstart", e => { lbX = e.touches[0].clientX; }, { passive: true });
+$("#lb").addEventListener("touchend", e => {
+  if (lbX == null) return; const dx = e.changedTouches[0].clientX - lbX; lbX = null;
+  if (Math.abs(dx) > 40) lbStep(dx < 0 ? 1 : -1);
+});
+document.addEventListener("keydown", e => {
+  if (!$("#lb").classList.contains("open")) return;
+  if (e.key === "Escape") closeLightbox(); else if (e.key === "ArrowRight") lbStep(1); else if (e.key === "ArrowLeft") lbStep(-1);
+});
+
+/* ---------------- opening hours (OpenStreetMap) ---------------- */
+const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], DAYN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const hm = m => { if (m === 1440) return "24:00"; m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+function parseOH(raw){
+  try {
+    const s = String(raw || "").trim(); if (!s) return null;
+    if (/^24\/7$/.test(s)) return { days: DAYS.map(() => [[0, 1440]]) };
+    const days = DAYS.map(() => undefined);
+    const D = "(?:Mo|Tu|We|Th|Fr|Sa|Su)";
+    const re = new RegExp("^((?:" + D + "(?:\\s*-\\s*" + D + ")?)(?:\\s*,\\s*(?:PH|" + D + "(?:\\s*-\\s*" + D + ")?))*)?\\s*(.*)$");
+    for (let rule of s.split(";")){
+      rule = rule.trim(); if (!rule) continue;
+      if (/^(PH|SH)\b/.test(rule)) continue;               // holiday rules are ignored
+      const m = rule.match(re); if (!m) return null;
+      const timePart = m[2].trim();
+      const idxs = [];
+      if (!m[1]) for (let i = 0; i < 7; i++) idxs.push(i);
+      else m[1].split(",").map(x => x.trim()).forEach(seg => {
+        if (seg === "PH") return;
+        const ab = seg.split("-").map(x => x.trim());
+        const ia = DAYS.indexOf(ab[0]), ib = ab[1] ? DAYS.indexOf(ab[1]) : ia;
+        if (ia < 0 || ib < 0) throw new Error("bad day");
+        for (let i = ia, k = 0; k < 7; i = (i + 1) % 7, k++){ idxs.push(i); if (i === ib) break; }
+      });
+      let spans = [];
+      if (!/^(off|closed)$/i.test(timePart)){
+        for (const t of timePart.split(",")){
+          const tm = t.trim().match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\+?$/);
+          if (!tm) return null;
+          const a = +tm[1] * 60 + +tm[2]; let b = +tm[3] * 60 + +tm[4]; if (b <= a) b += 1440;
+          spans.push([a, b]);
+        }
+      }
+      idxs.forEach(i => days[i] = spans);
+    }
+    return days.some(d => d !== undefined) ? { days } : null;
+  } catch(e){ return null; }
+}
+function spanStr(sp){
+  if (sp === undefined) return "Not listed";
+  if (!sp.length) return "Closed";
+  return sp.map(x => (x[0] === 0 && x[1] >= 1440) ? "Open 24 hours" : hm(x[0]) + "–" + hm(x[1])).join(", ");
+}
+function ohRows(p){
+  const today = (new Date().getDay() + 6) % 7, rows = [];
+  for (let i = 0; i < 7; i++){
+    const t = spanStr(p.days[i]), last = rows[rows.length - 1];
+    if (last && last.t === t && last.end === i - 1){ last.end = i; if (i === today) last.today = true; }
+    else rows.push({ start: i, end: i, t, today: i === today });
+  }
+  return rows.map(r => ({ d: r.start === r.end ? DAYN[r.start] : DAYN[r.start] + "–" + DAYN[r.end], t: r.t, today: r.today }));
+}
+function ohStatus(p){
+  const now = new Date(), d = (now.getDay() + 6) % 7, m = now.getHours() * 60 + now.getMinutes();
+  const today = p.days[d], yest = p.days[(d + 6) % 7];
+  if (today === undefined && yest === undefined) return "";
+  for (const x of today || []){
+    if (x[0] === 0 && x[1] >= 1440) return "🟢 Open 24 hours today";
+    if (m >= x[0] && m < x[1]) return "🟢 Open now · closes at " + hm(x[1]);
+  }
+  for (const x of yest || []) if (x[1] > 1440 && m < x[1] - 1440) return "🟢 Open now · closes at " + hm(x[1]);
+  for (let k = 0; k < 7; k++){
+    const sp = p.days[(d + k) % 7]; if (!sp) continue;
+    for (const x of sp){
+      if (k === 0 && x[0] <= m) continue;
+      return "🔴 Closed now · opens " + (k === 0 ? "today" : k === 1 ? "tomorrow" : DAYN[(d + k) % 7]) + " at " + hm(x[0]);
+    }
+  }
+  return "🔴 Closed now";
+}
+function pickOSM(els, qid, title){
+  const norm = x => String(x || "").toLowerCase().replace(/\(.*?\)/g, " ").replace(/[^a-z0-9\u0900-\u0D7F ]/g, " ").replace(/\s+/g, " ").trim();
+  const STOP = new Set(["the", "and", "of", "sri", "shri", "temple", "fort", "palace", "museum", "park", "lake"]);
+  const toks = new Set(norm(title).split(" ").filter(w => w.length > 2 && !STOP.has(w)));
+  const sim = n => {
+    const nt = norm(n).split(" ").filter(w => w.length > 2 && !STOP.has(w));
+    if (!nt.length || !toks.size) return norm(n) && norm(n) === norm(title) ? 1 : 0;
+    let hit = 0; nt.forEach(w => { if (toks.has(w)) hit++; });
+    return hit / Math.max(toks.size, nt.length);
+  };
+  const byQ = qid ? els.find(e => e.tags && e.tags.wikidata === qid) : null;
+  if (byQ && byQ.tags.opening_hours) return byQ.tags;
+  let best = null, bs = 0;
+  els.forEach(e => { const tg = e.tags || {}; if (!tg.opening_hours) return; const sc = Math.max(sim(tg.name), sim(tg["name:en"])); if (sc > bs){ bs = sc; best = e; } });
+  const tags = Object.assign({}, byQ ? byQ.tags : {});
+  if (best && bs >= 0.5) ["opening_hours", "fee", "charge", "website", "contact:website", "phone", "contact:phone", "wheelchair"].forEach(k => { if (!tags[k] && best.tags[k]) tags[k] = best.tags[k]; });
+  return Object.keys(tags).length ? tags : null;
+}
+async function fetchHours(qid, lat, lon, title, o){
+  if (lat == null || lon == null) return null;
+  const la = (+lat).toFixed(5), lo = (+lon).toFixed(5);
+  const q = "[out:json][timeout:20];(" + (qid && /^Q\d+$/.test(qid) ? 'nwr(around:2500,' + la + ',' + lo + ')["wikidata"="' + qid + '"];' : "") +
+    'nwr(around:400,' + la + ',' + lo + ')["opening_hours"]["name"];);out tags center 60;';
+  try {
+    const d = await getJSON("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q), 25000, o);
+    return pickOSM(d.elements || [], qid, title);
+  } catch(e){ return undefined; }   // undefined = couldn't check (no signal / server busy)
+}
+function renderHours(box, tags, gUrl){
+  if (!box) return;
+  let h = "";
+  const oh = tags && tags.opening_hours;
+  if (oh){
+    const p = parseOH(oh);
+    if (p){
+      const st = ohStatus(p);
+      if (st) h += '<div class="rec" style="margin-block-end:8px"><b>' + st + '</b></div>';
+      h += '<table class="hours">' + ohRows(p).map(r => '<tr' + (r.today ? ' class="today"' : "") + '><td>' + r.d + (r.today ? " (today)" : "") + '</td><td>' + esc(r.t) + '</td></tr>').join("") + '</table>';
+    } else h += '<div class="rec"><b>' + esc(oh) + '</b></div>';
+  }
+  const kv = [];
+  if (tags){
+    if (tags.fee === "no") kv.push("🎟️ Free entry");
+    else if (tags.charge) kv.push("🎟️ Entry: " + tags.charge);
+    else if (tags.fee === "yes") kv.push("🎟️ Entry fee applies");
+    if (tags.wheelchair === "yes") kv.push("♿ Wheelchair accessible");
+    else if (tags.wheelchair === "limited") kv.push("♿ Partly wheelchair accessible");
+    else if (tags.wheelchair === "no") kv.push("♿ Not wheelchair accessible");
+  }
+  if (kv.length) h += '<div class="kv">' + kv.map(x => '<span>' + esc(x) + '</span>').join("") + '</div>';
+  const web = tags && (tags.website || tags["contact:website"]), ph = tags && (tags.phone || tags["contact:phone"]);
+  if (web && /^https?:\/\//i.test(web)) h += '<p class="small" style="margin:8px 0 0">🌐 <a href="' + esc(web) + '" target="_blank" rel="noopener">Official website</a></p>';
+  if (ph) h += '<p class="small" style="margin:6px 0 0">📞 <a href="tel:' + esc(ph.split(";")[0].replace(/[^\d+]/g, "")) + '">' + esc(ph.split(";")[0]) + '</a></p>';
+  if (!h) h = '<p class="small muted" style="margin:0">' + (tags === undefined ? "Couldn’t check opening hours right now (weak or no signal)." : "Opening hours aren’t listed in OpenStreetMap for this place.") + '</p>';
+  h += '<a class="gbtn" href="' + esc(gUrl) + '" target="_blank" rel="noopener">Check hours, reviews &amp; busy times on Google Maps</a>';
+  if (oh) h += '<p class="small muted" style="margin:6px 0 0">Hours come from OpenStreetMap volunteers and may be out of date, especially on holidays.</p>';
+  box.innerHTML = h;
+}
+
+/* ---------------- map view (Leaflet + OpenStreetMap) ---------------- */
+const LEAFLET = {
+  css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css", cssSri: "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=",
+  js: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js", jsSri: "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+};
+let leafletP = null, map = null, mapLayer = null, mapDrawn = -1, mapUserMoved = false, mapProgrammatic = false;
+function loadLeaflet(){
+  if (window.L) return Promise.resolve(window.L);
+  if (leafletP) return leafletP;
+  leafletP = new Promise((res, rej) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet"; css.href = LEAFLET.css; css.integrity = LEAFLET.cssSri; css.crossOrigin = "anonymous";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = LEAFLET.js; js.integrity = LEAFLET.jsSri; js.crossOrigin = "anonymous";
+    js.onload = () => res(window.L);
+    js.onerror = () => { leafletP = null; js.remove(); rej(new Error("map failed")); };
+    document.head.appendChild(js);
+  });
+  return leafletP;
+}
+async function showMap(){
+  const msg = $("#mapMsg");
+  if (!state.mapPlaces.length && !state.me){
+    msg.innerHTML = '<div class="card"><b>Nothing on the map yet</b><p class="small muted" style="margin:6px 0 10px">Find spots near you, or search a place and tap “Explore around here”.</p><button class="btn small" id="mapFind">📍 Find spots near me</button></div>';
+    $("#mapFind").addEventListener("click", async () => { msg.innerHTML = spinner(); await loadNearby(false); showMap(); });
+  } else msg.innerHTML = "";
+  let L;
+  try { L = await loadLeaflet(); }
+  catch(e){ msg.innerHTML = '<div class="note">The map needs an internet connection the first time you open it. Your saved places are still in the Nearby and Saved tabs.</div>'; return; }
+  if (!map){
+    map = L.map("map", { zoomControl: true, attributionControl: true }).setView([20.6, 78.9], 4);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(map);
+    mapLayer = L.layerGroup().addTo(map);
+    map.on("popupopen", e => {
+      const el = e.popup.getElement(); if (!el) return;
+      const b = el.querySelector("[data-pi]");
+      if (b) b.addEventListener("click", () => { const p = state.mapPlaces[+b.dataset.pi]; if (p) openPlace(p); });
+    });
+    map.on("movestart", () => { if (!mapProgrammatic) mapUserMoved = true; });
+    map.on("moveend", () => { if (mapUserMoved && navigator.onLine !== false) $("#mapArea").style.display = ""; mapProgrammatic = false; });
+  }
+  setTimeout(() => { map.invalidateSize(); if (mapDrawn !== state.mapVer) drawMarkers(); }, 60);
+}
+function drawMarkers(){
+  if (!map || !window.L) return;
+  const L = window.L;
+  mapDrawn = state.mapVer;
+  mapLayer.clearLayers();
+  const pts = [];
+  state.mapPlaces.forEach((p, i) => {
+    if (p.lat == null || p.lon == null) return;
+    const cat = categoryOf(p.title, p.description);
+    const icon = L.divIcon({ className: "pin", html: '<div class="pinb' + (offReg[p.title] ? " off" : "") + '"><span>' + CAT_ICON[cat] + '</span></div>', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -30] });
+    const km = state.me ? fmtDist(distKm(state.me, p)) + " away" : "";
+    const html = '<div class="pop"><div class="pn">' + esc(p.title) + '</div><div class="pd">' + esc(p.description || "") + (km ? " · " + km : "") + '</div>' +
+      '<div class="row"><button data-pi="' + i + '">Details</button><a href="' + gDir(p.lat, p.lon) + '" target="_blank" rel="noopener">Directions</a></div></div>';
+    L.marker([p.lat, p.lon], { icon, title: p.title }).bindPopup(html).addTo(mapLayer);
+    pts.push([p.lat, p.lon]);
+  });
+  if (state.me){
+    L.circleMarker([state.me.lat, state.me.lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 }).bindPopup("You are here").addTo(mapLayer);
+    pts.push([state.me.lat, state.me.lon]);
+  }
+  $("#mapInfo").textContent = state.mapPlaces.length ? state.mapPlaces.length + " tourist spots · tap a pin" : (state.me ? "No spots loaded yet" : "Tourist spots on the map");
+  mapProgrammatic = true; mapUserMoved = false; $("#mapArea").style.display = "none";
+  if (pts.length > 1) map.fitBounds(L.latLngBounds(pts), { padding: [36, 36], maxZoom: 16 });
+  else if (pts.length === 1) map.setView(pts[0], 15);
+}
+$("#mapMe").addEventListener("click", async () => {
+  $("#mapMe").disabled = true;
+  try { state.me = await locate(); store.set("lastLoc", state.me); }
+  catch(e){ toast(e.message); $("#mapMe").disabled = false; return; }
+  $("#mapMe").disabled = false;
+  state.mapVer++; drawMarkers();
+  if (map){ mapProgrammatic = true; map.setView([state.me.lat, state.me.lon], 15); }
+});
+$("#mapArea").addEventListener("click", async () => {
+  if (!map) return;
+  const c = map.getCenter(), b = map.getBounds();
+  const r = Math.min(10000, Math.max(500, Math.round(c.distanceTo(b.getNorthEast()))));
+  $("#mapArea").textContent = "Searching…";
+  try {
+    const all = await geoSearch(c.lat, c.lng, r, 50);
+    const spots = all.filter(x => x.score >= 2);
+    if (state.me) spots.forEach(x => x.km = distKm(state.me, x));
+    state.mapPlaces = spots; state.mapVer++;
+    const keepView = map.getBounds();
+    drawMarkers(); mapProgrammatic = true; map.fitBounds(keepView);
+    toast(spots.length ? spots.length + " spots found here" : "No well-known spots in this area");
+  } catch(e){ toast("Couldn’t search — check your signal."); }
+  $("#mapArea").textContent = "🔍 Search this area"; $("#mapArea").style.display = "none";
+});
 
 /* ---------------- offline downloads ---------------- */
 function requestPersist(){ try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){} }
@@ -1034,7 +1403,10 @@ async function downloadPlace(p){
   ]);
   const addr = res[1];
   await fetchWikivoyage([art.title, cityOf(addr), addr && addr.state_district, addr && addr.state], art.title, o);
-  for (const u of Array.from(new Set([p.thumb, art.image].filter(Boolean)))) await pinImage(u, o);
+  await fetchHours(art.qid, lat, lon, art.title, o);
+  const pics = await fetchGallery(art, o).catch(() => []);
+  const imgs = [p.thumb, art.image].concat(pics.slice(0, 4).map(g => g.thumb));
+  for (const u of Array.from(new Set(imgs.filter(Boolean)))) await pinImage(u, o);
   const entry = { title: art.title, description: art.description || p.description || "", lat, lon, thumb: p.thumb || art.image || "", bytes: o.size, t: Date.now(), urls: Array.from(o.pin) };
   const reg = Object.assign({}, offReg); reg[art.title] = entry; offSet(reg);
   indexPlaces([Object.assign({}, entry, { score: 3 })]);
@@ -1095,7 +1467,7 @@ async function downloadMany(list, around){
   const prog = $("#areaProg");
   if (prog) prog.innerHTML = '<div class="note" style="margin:10px 0 0">' + (run.cancel ? "Stopped. " : "Done! ") + ok + ' place' + (ok === 1 ? "" : "s") + ' ready offline' +
     (bytes ? ' (' + fmtBytes(bytes) + ' added)' : "") + (fail ? ', ' + fail + ' couldn’t be downloaded' : "") + '.' +
-    '<br>For directions without signal, also download an offline map in Apple Maps (tap your profile picture → Offline Maps).</div>';
+    '<br>For directions without signal, also download this area in the Google Maps app (profile picture → Offline maps → Select your own map).</div>';
   if (!around && state.nearbyView && !state.nearbyView.offline){
     renderNearbyBadges();
   }
@@ -1182,7 +1554,7 @@ if (synth && "onvoiceschanged" in synth) synth.addEventListener("voiceschanged",
 
 /* ---------------- detail navigation ---------------- */
 function closeDetail(fromCode){
-  stopSpeech();
+  stopSpeech(); closeLightbox();
   const det = $("#detail");
   if (!det.classList.contains("open")) return;
   det.classList.remove("open");
