@@ -123,6 +123,15 @@ details.wv summary{font-weight:600;cursor:pointer}
 .toast.show{display:block}
 .attrib{font-size:12px;color:var(--muted);padding:10px 16px}
 .install{border:1px dashed var(--brand)}
+.netpill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:#fde68a;color:#78350f;display:none;white-space:nowrap}
+.netpill.show{display:inline-block}
+.netpill.off{background:#fecaca;color:#7f1d1d}
+.badge.offb{background:#dcfce7;color:#166534}
+.progress{block-size:8px;background:var(--line);border-radius:999px;overflow:hidden;margin-block:8px}
+.progress > div{block-size:100%;background:var(--brand);transition:inline-size .3s}
+.note{background:var(--brand-soft);border-radius:12px;padding:10px 12px;font-size:13px;margin-block-end:10px}
+.player select{max-inline-size:62vw}
+.roundbtn:disabled{opacity:.6}
 </style>
 </head>
 <body>
@@ -134,6 +143,7 @@ details.wv summary{font-weight:600;cursor:pointer}
         <h1>e-Tourist Guide</h1>
         <div class="locline" id="locline">Tap “Find spots near me” to start</div>
       </div>
+      <span class="netpill" id="netpill"></span>
     </div>
   </header>
 
@@ -155,6 +165,7 @@ details.wv summary{font-weight:600;cursor:pointer}
         <button class="btn ghost small" id="btnRefresh">↻ Refresh</button>
       </div>
       <div id="nearbyList"></div>
+      <div id="areaDl"></div>
     </section>
 
     <!-- SEARCH -->
@@ -173,6 +184,9 @@ details.wv summary{font-weight:600;cursor:pointer}
       <div id="savedList"></div>
       <div class="section-title">Recently viewed</div>
       <div id="recentList"></div>
+      <div class="section-title">Available offline</div>
+      <div id="offStatus" class="small muted" style="margin:0 2px 8px"></div>
+      <div id="offlineList"></div>
       <div class="card install" style="margin-block-start:18px">
         <div style="font-weight:700">Add this app to your Home Screen</div>
         <p class="small muted" style="margin:6px 0 0">In Safari, tap the Share button (square with an arrow), then <b>Add to Home Screen</b>. It will open full-screen like a normal app.</p>
@@ -192,7 +206,7 @@ details.wv summary{font-weight:600;cursor:pointer}
   <div class="detail-inner">
     <div class="dbar">
       <button class="roundbtn" id="btnBack" aria-label="Back">←</button>
-      <button class="roundbtn" id="btnSave" aria-label="Save">☆</button>
+      <div class="row"><button class="roundbtn" id="btnDl" aria-label="Download for offline">⬇</button><button class="roundbtn" id="btnSave" aria-label="Save">☆</button></div>
     </div>
     <div id="dcontent"></div>
   </div>
@@ -234,14 +248,108 @@ function fmtDur(min){
   const h = Math.floor(min / 60), m = min % 60;
   return h + " h" + (m ? " " + m + " min" : "");
 }
-async function getJSON(url, timeoutMs){
+/* ---------- network + offline cache ---------- */
+const DATA_CACHE = "etg-data-v1", PIN_CACHE = "etg-pin-v1", IMG_CACHE = "etg-img-v1";
+const HAS_CACHE = typeof caches !== "undefined";
+const memo = new Map();
+const cachedAt = new Map();
+let lastNominatim = 0, lastCacheUse = 0;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function putText(cacheName, url, text){
+  if (!HAS_CACHE) return;
+  try {
+    const c = await caches.open(cacheName);
+    await c.put(url, new Response(text, { headers: { "content-type": "application/json", "x-etg-at": String(Date.now()) } }));
+    if (cacheName === DATA_CACHE && Math.random() < 0.05) trimCache(DATA_CACHE, 800);
+  } catch(e){}
+}
+async function trimCache(name, max){
+  try { const c = await caches.open(name); const keys = await c.keys(); for (let i = 0; i < keys.length - max; i++) await c.delete(keys[i]); } catch(e){}
+}
+async function readCache(url){
+  if (!HAS_CACHE) return null;
+  try {
+    const r = await caches.match(url);
+    if (!r) return null;
+    return { text: await r.text(), at: +(r.headers.get("x-etg-at") || 0) };
+  } catch(e){ return null; }
+}
+async function netText(url, timeoutMs){
+  if (url.indexOf("nominatim.openstreetmap.org") >= 0){            // respect 1 request/second
+    const slot = Math.max(Date.now(), lastNominatim + 1100); lastNominatim = slot;
+    if (slot > Date.now()) await sleep(slot - Date.now());
+  }
   const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), timeoutMs || 15000);
+  const t = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const r = await fetch(url, { signal: ctl.signal });
     if (!r.ok) throw new Error("HTTP " + r.status);
-    return await r.json();
+    return await r.text();
   } finally { clearTimeout(t); }
+}
+/* Network first; if the network fails, or is slow and a saved copy exists, use the saved copy.
+   o.pin (a Set) = keep this response permanently as part of an offline download. */
+function getJSON(url, timeoutMs, o){
+  o = o || {};
+  const track = text => { if (o.pin){ o.pin.add(url); o.size = (o.size || 0) + text.length; putText(PIN_CACHE, url, text); } };
+  const m = memo.get(url);
+  if (m && Date.now() - m.t < 600000){ track(m.text); return Promise.resolve(JSON.parse(m.text)); }
+  const cacheP = readCache(url);
+  const netP = navigator.onLine === false ? Promise.reject(new Error("offline")) : netText(url, timeoutMs || 15000);
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const tryCache = async () => {
+      const c = await cacheP;
+      if (done) return true;
+      if (!c) return false;
+      let data; try { data = JSON.parse(c.text); } catch(e){ return false; }
+      done = true;
+      cachedAt.set(url, c.at); lastCacheUse = Date.now(); updateNet();
+      track(c.text);
+      resolve(data);
+      return true;
+    };
+    const slow = setTimeout(() => { if (!done) tryCache(); }, o.pin ? 30000 : 4500);
+    netP.then(text => {
+      clearTimeout(slow);
+      memo.set(url, { text, t: Date.now() });
+      if (o.pin) track(text); else putText(DATA_CACHE, url, text);
+      if (done) return;
+      let data; try { data = JSON.parse(text); } catch(e){ done = true; reject(e); return; }
+      done = true; cachedAt.delete(url); resolve(data);
+    }).catch(async err => {
+      clearTimeout(slow);
+      if (done) return;
+      if (!(await tryCache()) && !done){ done = true; reject(err); }
+    });
+  });
+}
+function updateNet(){
+  const el = document.getElementById("netpill"); if (!el) return;
+  if (navigator.onLine === false){ el.textContent = "Offline"; el.className = "netpill show off"; }
+  else if (Date.now() - lastCacheUse < 60000){ el.textContent = "Weak signal · saved info"; el.className = "netpill show"; }
+  else el.className = "netpill";
+}
+window.addEventListener("online", updateNet);
+window.addEventListener("offline", updateNet);
+setInterval(updateNet, 15000);
+function fmtBytes(b){ return b < 1048576 ? Math.max(1, Math.round(b / 1024)) + " KB" : (b / 1048576).toFixed(1) + " MB"; }
+
+/* ---------- places remembered on this phone ---------- */
+let offReg = store.get("offline", {});
+function offSet(v){ offReg = v; store.set("offline", v); }
+function indexPlaces(arr){
+  if (!arr || !arr.length) return;
+  const idx = store.get("index", {}), now = Date.now();
+  arr.forEach(p => { idx[p.title] = { title: p.title, description: p.description || "", lat: p.lat, lon: p.lon, thumb: p.thumb || "", score: p.score != null ? p.score : scorePlace(p), t: now }; });
+  const keys = Object.keys(idx);
+  if (keys.length > 900) keys.sort((a, b) => idx[a].t - idx[b].t).slice(0, keys.length - 900).forEach(k => delete idx[k]);
+  store.set("index", idx);
+}
+function localPlaces(){
+  const all = Object.assign({}, store.get("index", {}));
+  Object.keys(offReg).forEach(k => { all[k] = Object.assign({}, all[k] || {}, offReg[k]); });
+  return Object.values(all);
 }
 function mwURL(host, params){
   const u = new URL("https://" + host + "/w/api.php");
@@ -314,10 +422,10 @@ function locate(){
     );
   });
 }
-async function reverseGeocode(lat, lon, zoom){
+async function reverseGeocode(lat, lon, zoom, o){
   try {
     const u = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=en&zoom=" + (zoom || 14) + "&lat=" + lat + "&lon=" + lon;
-    const d = await getJSON(u, 10000);
+    const d = await getJSON(u, 10000, o);
     return d && d.address ? d.address : null;
   } catch(e){ return null; }
 }
@@ -341,13 +449,15 @@ function mapPages(pages){
     thumb: p.thumbnail ? p.thumbnail.source : ""
   }));
 }
-async function geoSearch(lat, lon, radius, limit){
+async function geoSearch(lat, lon, radius, limit, o){
   const d = await getJSON(mwURL(WP, {
     action: "query", generator: "geosearch", ggscoord: lat + "|" + lon, ggsradius: radius, ggslimit: limit || 50,
     prop: "coordinates|pageimages|description", piprop: "thumbnail", pithumbsize: 240, pilimit: 50, colimit: 50
-  }));
+  }), 15000, o);
   const here = { lat, lon };
-  return mapPages(d.query && d.query.pages).map(p => Object.assign(p, { km: distKm(here, p), score: scorePlace(p) }));
+  const res = mapPages(d.query && d.query.pages).map(p => Object.assign(p, { km: distKm(here, p), score: scorePlace(p) }));
+  indexPlaces(res.filter(p => p.score >= 2));
+  return res;
 }
 async function textSearch(q){
   const d = await getJSON(mwURL(WP, {
@@ -356,7 +466,9 @@ async function textSearch(q){
   }));
   const pages = (d.query && d.query.pages) || [];
   pages.sort((a, b) => (a.index || 0) - (b.index || 0));
-  return mapPages(pages);
+  const res = mapPages(pages);
+  indexPlaces(res);
+  return res;
 }
 
 /* ---------------- list rendering ---------------- */
@@ -365,7 +477,7 @@ function itemHTML(p, i, showKm){
   const img = p.thumb ? '<img class="thumb" loading="lazy" alt="" src="' + esc(p.thumb) + '">' : '<div class="thumb">' + CAT_ICON[cat] + '</div>';
   const km = showKm && p.km != null ? '<div class="dist">' + fmtDist(p.km) + ' away</div>' : "";
   return '<button class="item" data-i="' + i + '">' + img +
-    '<div style="min-inline-size:0"><div class="name">' + esc(p.title) + '</div>' +
+    '<div style="min-inline-size:0"><div class="name">' + esc(p.title) + (offReg[p.title] ? '<span class="badge offb">✓ Offline</span>' : "") + '</div>' +
     (p.description ? '<div class="desc">' + esc(p.description) + '</div>' : "") + km + '</div></button>';
 }
 function bindList(container, arr){
@@ -376,11 +488,17 @@ function bindList(container, arr){
 async function loadNearby(useCache){
   const list = $("#nearbyList");
   list.innerHTML = spinner();
+  $("#areaDl").innerHTML = "";
+  let note = "";
   try {
     if (!useCache || !state.me){
       $("#locline").textContent = "Finding your location…";
-      state.me = await locate();
-      store.set("lastLoc", state.me);
+      try { state.me = await locate(); store.set("lastLoc", state.me); }
+      catch(err){
+        const last = store.get("lastLoc", null);
+        if (last && navigator.onLine === false){ state.me = last; note = "Using your last known location. "; }
+        else throw err;
+      }
       reverseGeocode(state.me.lat, state.me.lon).then(a => {
         const lbl = areaLabel(a);
         $("#locline").textContent = "📍 " + (lbl || (state.me.lat.toFixed(4) + ", " + state.me.lon.toFixed(4)));
@@ -388,39 +506,54 @@ async function loadNearby(useCache){
     }
     $("#startCard").style.display = "none";
     $("#radiusRow").style.display = "flex";
-    const all = await geoSearch(state.me.lat, state.me.lon, state.radius, 50);
-    const spots = all.filter(p => p.score >= 2).sort((a, b) => a.km - b.km);
-    const others = all.filter(p => p.score < 2 && p.score > -2).sort((a, b) => a.km - b.km).slice(0, 15);
-    state.nearby = spots.concat(others);
-
-    // "You are here" detection
-    const here = spots.find(p => p.km <= 0.35);
-    const hc = $("#hereCard");
-    if (here){
-      hc.innerHTML = '<div class="card hero-here"><div class="k">You seem to be at</div><div class="t">' + esc(here.title) + '</div>' +
-        '<div class="small" style="opacity:.9">' + esc(here.description || "") + '</div>' +
-        '<button id="btnHere">Start the guided tour →</button></div>';
-      $("#btnHere").addEventListener("click", () => openPlace(here, { tour: true }));
-    } else hc.innerHTML = "";
-
-    let html = "";
-    if (spots.length){
-      html += '<div class="section-title">Tourist spots nearby (' + spots.length + ')</div><div class="list">' +
-        spots.map((p, i) => itemHTML(p, i, true)).join("") + '</div>';
-    } else {
-      html += '<div class="empty">No well-known tourist spots within ' + (state.radius/1000) + ' km.<br>Try a bigger radius or search a place by name.</div>';
+    let all, offline = false;
+    try { all = await geoSearch(state.me.lat, state.me.lon, state.radius, 50); }
+    catch(err){
+      offline = true;
+      const loc = localPlaces().map(p => Object.assign({}, p, { km: distKm(state.me, p), score: p.score != null ? p.score : 2 }));
+      all = loc.filter(p => p.km <= state.radius / 1000);
+      let extra = "";
+      if (!all.length){ all = loc.filter(p => offReg[p.title]); if (all.length) extra = " Nothing saved within " + (state.radius / 1000) + " km, so here are all your downloaded places."; }
+      note = "No signal — showing places saved on this phone." + extra + (note ? " " + note : "");
     }
-    if (others.length){
-      html += '<div class="section-title">Other places around you</div><div class="list">' +
-        others.map((p, i) => itemHTML(p, i + spots.length, true)).join("") + '</div>';
-    }
-    list.innerHTML = html;
-    bindList(list, state.nearby);
+    const byOff = (a, b) => ((offReg[b.title] ? 1 : 0) - (offReg[a.title] ? 1 : 0)) || (a.km - b.km);
+    const spots = all.filter(p => p.score >= 2).sort(offline ? byOff : (a, b) => a.km - b.km);
+    const others = offline ? [] : all.filter(p => p.score < 2 && p.score > -2).sort((a, b) => a.km - b.km).slice(0, 15);
+    state.nearbyView = { spots, others, note, offline };
+    renderNearby();
   } catch(e){
     $("#locline").textContent = "Location unavailable";
     $("#startCard").style.display = "";
     list.innerHTML = '<div class="card"><b>Hmm, that didn’t work.</b><p class="small muted" style="margin:6px 0 0">' + esc(e.message || "Please check your internet connection.") + '</p></div>';
   }
+}
+function renderNearby(){
+  const v = state.nearbyView; if (!v) return;
+  const list = $("#nearbyList");
+  state.nearby = v.spots.concat(v.others);
+  const here = v.spots.find(p => p.km <= 0.35);
+  const hc = $("#hereCard");
+  if (here){
+    hc.innerHTML = '<div class="card hero-here"><div class="k">You seem to be at</div><div class="t">' + esc(here.title) + '</div>' +
+      '<div class="small" style="opacity:.9">' + esc(here.description || "") + '</div>' +
+      '<button id="btnHere">Start the guided tour →</button></div>';
+    $("#btnHere").addEventListener("click", () => openPlace(here, { tour: true }));
+  } else hc.innerHTML = "";
+  let html = v.note ? '<div class="note">' + esc(v.note) + '</div>' : "";
+  if (v.spots.length){
+    html += '<div class="section-title">' + (v.offline ? "Saved tourist spots" : "Tourist spots nearby") + ' (' + v.spots.length + ')</div><div class="list">' +
+      v.spots.map((p, i) => itemHTML(p, i, true)).join("") + '</div>';
+  } else {
+    html += '<div class="empty">' + (v.offline ? "No places saved on this phone yet. When you have signal, use “Download this area” before you travel."
+      : "No well-known tourist spots within " + (state.radius / 1000) + " km.<br>Try a bigger radius or search a place by name.") + '</div>';
+  }
+  if (v.others.length){
+    html += '<div class="section-title">Other places around you</div><div class="list">' +
+      v.others.map((p, i) => itemHTML(p, i + v.spots.length, true)).join("") + '</div>';
+  }
+  list.innerHTML = html;
+  bindList(list, state.nearby);
+  if (!v.offline && v.spots.length) renderAreaDl(v.spots); else $("#areaDl").innerHTML = "";
 }
 $("#btnLocate").addEventListener("click", () => loadNearby(false));
 $("#btnRefresh").addEventListener("click", () => loadNearby(false));
@@ -452,7 +585,13 @@ async function doSearch(){
     bindList(list, res);
     $("#q").blur();
   } catch(e){
-    list.innerHTML = '<div class="empty">Search failed. Please check your internet connection.</div>';
+    const ql = q.toLowerCase();
+    const loc = localPlaces().filter(p => (p.title + " " + (p.description || "")).toLowerCase().indexOf(ql) >= 0);
+    loc.sort((a, b) => (offReg[b.title] ? 1 : 0) - (offReg[a.title] ? 1 : 0));
+    if (state.me) loc.forEach(p => p.km = distKm(state.me, p));
+    list.innerHTML = '<div class="note">No signal — showing matches from places saved on this phone.</div>' +
+      (loc.length ? '<div class="list">' + loc.map((p, i) => itemHTML(p, i, !!state.me)).join("") + '</div>' : '<div class="empty">Nothing saved on this phone matches “' + esc(q) + '”.</div>');
+    bindList(list, loc);
   }
   renderSuggest();
 }
@@ -465,7 +604,13 @@ function toggleSave(){
   const p = state.current; if (!p) return;
   let s = store.get("saved", []);
   if (isSaved(p.title)){ s = s.filter(x => x.title !== p.title); toast("Removed from Saved"); }
-  else { s.unshift(placeLite(p)); toast("Saved ⭐"); }
+  else {
+    s.unshift(placeLite(p));
+    if (navigator.onLine !== false && !offReg[p.title]){
+      toast("Saved ⭐ — also downloading it for offline use");
+      downloadPlace(p).then(updateDlBtn).catch(() => {});
+    } else toast("Saved ⭐");
+  }
   store.set("saved", s); updateSaveBtn();
 }
 function updateSaveBtn(){ $("#btnSave").textContent = state.current && isSaved(state.current.title) ? "★" : "☆"; }
@@ -481,6 +626,25 @@ function renderSaved(){
     el.innerHTML = arr.length ? '<div class="list">' + arr.map((p, i) => itemHTML(p, i, !!state.me)).join("") + '</div>' : '<div class="empty small">' + emptyMsg + '</div>';
     bindList(el, arr);
   });
+  const offArr = Object.values(offReg).sort((a, b) => b.t - a.t);
+  const ol = $("#offlineList");
+  if (state.me) offArr.forEach(p => p.km = distKm(state.me, p));
+  if (!offArr.length){
+    ol.innerHTML = '<div class="empty small">Nothing downloaded yet. Open a place and tap ⬇, or use “Download this area” on the Nearby tab (or after “Explore around here”).</div>';
+  } else {
+    const total = offArr.reduce((a, x) => a + (x.bytes || 0), 0);
+    ol.innerHTML = '<div class="small muted" style="margin:0 2px 8px">' + offArr.length + ' place' + (offArr.length > 1 ? "s" : "") + ' · about ' + fmtBytes(total) + '</div><div class="list">' +
+      offArr.map((p, i) => itemHTML(p, i, !!state.me)).join("") + '</div><button class="btn ghost small" id="clearOff" style="margin-block-start:8px">Remove all downloads</button>';
+    bindList(ol, offArr);
+    $("#clearOff").addEventListener("click", async () => {
+      if (!confirm("Remove all offline downloads from this phone?")) return;
+      if (HAS_CACHE){ for (const n of [PIN_CACHE, DATA_CACHE, IMG_CACHE]) { try { await caches.delete(n); } catch(e){} } }
+      offSet({}); memo.clear(); renderSaved(); toast("Offline downloads removed");
+    });
+  }
+  const st = $("#offStatus");
+  const ready = navigator.serviceWorker && navigator.serviceWorker.controller;
+  st.textContent = ready ? "✓ This app opens even with no signal." : "Offline start-up isn’t active yet — open the app once more with internet (and make sure sw.js is uploaded next to the app).";
 }
 $("#btnSave").addEventListener("click", toggleSave);
 
@@ -497,9 +661,9 @@ function parseSections(extract){
 }
 const SKIP_SEC = /^(see also|references|external links|further reading|notes|bibliography|gallery|sources|citations|footnotes|works cited|literature|explanatory notes)$/i;
 
-async function fetchArticle(title){
+async function fetchArticle(title, o){
   const d = await getJSON(mwURL(WP, { action: "query", prop: "extracts|pageprops|pageimages|coordinates|description", explaintext: 1, exsectionformat: "wiki",
-    titles: title, redirects: 1, piprop: "original|thumbnail", pithumbsize: 800 }));
+    titles: title, redirects: 1, piprop: "original|thumbnail", pithumbsize: 800 }), 15000, o);
   const p = d.query && d.query.pages && d.query.pages[0];
   if (!p || p.missing) throw new Error("Article not found");
   return {
@@ -525,10 +689,10 @@ function wdTime(v){
   if (v.precision === 8) return (Math.floor(yr / 10) * 10) + "s" + (bce ? " BCE" : "");
   return yr + (bce ? " BCE" : "");
 }
-async function fetchFacts(qid){
+async function fetchFacts(qid, o){
   if (!qid) return [];
   try {
-    const d = await getJSON(mwURL(WD, { action: "wbgetentities", ids: qid, props: "claims" }), 12000);
+    const d = await getJSON(mwURL(WD, { action: "wbgetentities", ids: qid, props: "claims" }), 12000, o);
     const ent = d.entities && d.entities[qid]; if (!ent) return [];
     const claims = ent.claims || {};
     const raw = []; const needLabels = new Set();
@@ -553,26 +717,28 @@ async function fetchFacts(qid){
     let labels = {};
     if (needLabels.size){
       const ids = Array.from(needLabels).slice(0, 50).join("|");
-      const l = await getJSON(mwURL(WD, { action: "wbgetentities", ids, props: "labels", languages: "en" }), 12000);
+      const l = await getJSON(mwURL(WD, { action: "wbgetentities", ids, props: "labels", languages: "en" }), 12000, o);
       Object.keys(l.entities || {}).forEach(k => { const e = l.entities[k]; labels[k] = e.labels && e.labels.en ? e.labels.en.value : ""; });
     }
     return raw.map(r => ({ label: r.label, value: r.vals.map(v => v.s || labels[v.q]).filter(Boolean).join(", ") })).filter(r => r.value);
   } catch(e){ return []; }
 }
 
-async function fetchWeather(lat, lon){
+async function fetchWeather(lat, lon, o){
   try {
     const u = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
       "&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,sunset&timezone=auto&forecast_days=2";
-    return await getJSON(u, 10000);
+    const d = await getJSON(u, 10000, o);
+    if (cachedAt.has(u)) d._cachedAt = cachedAt.get(u);
+    return d;
   } catch(e){ return null; }
 }
 const WMO = c => c === 0 ? "☀️ Clear" : c <= 2 ? "🌤️ Partly cloudy" : c === 3 ? "☁️ Cloudy" : c <= 48 ? "🌫️ Foggy" : c <= 57 ? "🌦️ Drizzle" : c <= 67 ? "🌧️ Rain" : c <= 77 ? "❄️ Snow" : c <= 82 ? "🌧️ Showers" : c <= 86 ? "🌨️ Snow showers" : "⛈️ Thunderstorm";
 
-async function fetchWikivoyage(candidates, placeTitle){
+async function fetchWikivoyage(candidates, placeTitle, o){
   for (const t of candidates.filter(Boolean)){
     try {
-      const d = await getJSON(mwURL(WV, { action: "query", prop: "extracts|pageprops", explaintext: 1, exsectionformat: "wiki", titles: t, redirects: 1 }), 12000);
+      const d = await getJSON(mwURL(WV, { action: "query", prop: "extracts|pageprops", explaintext: 1, exsectionformat: "wiki", titles: t, redirects: 1 }), 12000, o);
       const p = d.query && d.query.pages && d.query.pages[0];
       if (!p || p.missing || !p.extract) continue;
       if (p.pageprops && p.pageprops.disambiguation !== undefined) continue;
@@ -682,7 +848,7 @@ async function openPlace(p, opts){
   opts = opts || {};
   stopSpeech();
   state.current = placeLite(p);
-  updateSaveBtn();
+  updateSaveBtn(); updateDlBtn();
   const det = $("#detail");
   if (!det.classList.contains("open")){ det.classList.add("open"); history.pushState({ d: 1 }, ""); }
   det.scrollTop = 0;
@@ -692,11 +858,11 @@ async function openPlace(p, opts){
 
   let art;
   try { art = await fetchArticle(p.title); }
-  catch(e){ C.innerHTML += '<div class="card" style="margin:12px 16px">Couldn’t load details. Please check your internet connection.</div>'; return; }
+  catch(e){ C.innerHTML = C.innerHTML.replace(spinner(), "") + '<div class="card" style="margin:12px 16px"><b>Couldn’t load this place.</b><p class="small muted" style="margin:6px 0 0">There’s no signal and this place isn’t downloaded yet. Tip: while you have Wi-Fi, tap ⬇ on places you plan to visit, or use “Download this area”.</p></div>'; return; }
   if (state.current.title !== p.title && state.current.title !== art.title) return; // user moved on
   const lat = art.lat != null ? art.lat : p.lat, lon = art.lon != null ? art.lon : p.lon;
   state.current = { title: art.title, description: art.description || p.description, lat, lon, thumb: p.thumb || art.image };
-  addRecent(state.current); updateSaveBtn();
+  addRecent(state.current); updateSaveBtn(); updateDlBtn();
 
   const secs = parseSections(art.extract);
   const cat = categoryOf(art.title, art.description);
@@ -755,12 +921,14 @@ async function openPlace(p, opts){
 
   // Tips + Wikivoyage
   (async () => {
-    const [weather, addr] = await Promise.all([weather$, addr$]);
+    let [weather, addr] = await Promise.all([weather$, addr$]);
+    if (weather && weather._cachedAt && Date.now() - weather._cachedAt > 36 * 3600e3) weather = null;  // too old to be useful
     const tips = generalTips(cat, weather, art.title);
     let html = "";
     if (weather && weather.current){
       const cur = weather.current, d = weather.daily;
-      html += '<div class="rec" style="margin-block-end:10px"><b>' + WMO(cur.weather_code) + ', ' + Math.round(cur.temperature_2m) + '°C now</b>' +
+      const saved = weather._cachedAt ? ' (saved ' + new Date(weather._cachedAt).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + ')' : " now";
+      html += '<div class="rec" style="margin-block-end:10px"><b>' + WMO(cur.weather_code) + ', ' + Math.round(cur.temperature_2m) + '°C' + saved + '</b>' +
         '<div class="small muted">Today ' + Math.round(d.temperature_2m_min[0]) + '–' + Math.round(d.temperature_2m_max[0]) + '°C · rain chance ' + (d.precipitation_probability_max[0] ?? 0) + '%' +
         (d.sunset && d.sunset[0] ? ' · sunset ' + d.sunset[0].slice(11, 16) : "") + '</div></div>';
     }
@@ -813,7 +981,8 @@ function wayLinks(me, lat, lon){
 async function renderWay(box, me, lat, lon){
   const km = distKm(me, { lat, lon });
   const rec = recommendTravel(km);
-  box.innerHTML = '<div class="way"><div class="rec"><b>' + rec.icon + " " + fmtDist(km) + ' away (straight line)</b><div class="small" style="margin-block-start:4px">' + esc(rec.text) + '</div><div class="small muted" id="driveEst"></div></div>' + wayLinks(me, lat, lon) + '</div>';
+  const offHint = navigator.onLine === false ? '<p class="small muted" style="margin:8px 0 0">No signal? Apple Maps can still guide you if you downloaded an offline map of this area (Maps → tap your profile picture → Offline Maps).</p>' : "";
+  box.innerHTML = '<div class="way"><div class="rec"><b>' + rec.icon + " " + fmtDist(km) + ' away (straight line)</b><div class="small" style="margin-block-start:4px">' + esc(rec.text) + '</div><div class="small muted" id="driveEst"></div></div>' + wayLinks(me, lat, lon) + offHint + '</div>';
   if (km > 0.3 && km < 1500){
     const d = await driveEstimate(me, { lat, lon });
     const el = $("#driveEst");
@@ -827,6 +996,7 @@ async function exploreAround(p){
   state.me = state.me || null;
   const list = $("#nearbyList");
   list.innerHTML = spinner();
+  $("#areaDl").innerHTML = "";
   $("#startCard").style.display = "none";
   $("#hereCard").innerHTML = '<div class="card"><div class="small muted">Exploring around</div><div style="font-weight:700;font-size:17px">' + esc(p.title) + '</div><button class="btn ghost small" id="backToMe" style="padding-inline:0">← Back to my location</button></div>';
   $("#backToMe").addEventListener("click", () => { $("#hereCard").innerHTML = ""; loadNearby(false); });
@@ -836,35 +1006,145 @@ async function exploreAround(p){
     const ref = state.me;
     if (ref) spots.forEach(x => x.km = distKm(ref, x));
     state.nearby = spots;
+    if (spots.length) renderAreaDl(spots, p.title); else $("#areaDl").innerHTML = "";
     list.innerHTML = spots.length ? '<div class="section-title">Tourist spots within 10 km of ' + esc(p.title) + '</div><div class="list">' + spots.map((x, i) => itemHTML(x, i, !!ref)).join("") + '</div>' : '<div class="empty">No well-known spots found around here.</div>';
     bindList(list, spots);
   } catch(e){ list.innerHTML = '<div class="empty">Couldn’t load places. Check your internet connection.</div>'; }
 }
 
+/* ---------------- offline downloads ---------------- */
+function requestPersist(){ try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){} }
+async function pinImage(u, o){
+  if (!HAS_CACHE || !u) return;
+  try {
+    const r = await fetch(u, { mode: "cors" });
+    if (!r.ok) return;
+    const b = await r.clone().blob();
+    await (await caches.open(PIN_CACHE)).put(u, r);
+    o.pin.add(u); o.size = (o.size || 0) + b.size;
+  } catch(e){}
+}
+async function downloadPlace(p){
+  const o = { pin: new Set(), size: 0 };
+  const art = await fetchArticle(p.title, o);
+  const lat = art.lat != null ? art.lat : p.lat, lon = art.lon != null ? art.lon : p.lon;
+  const res = await Promise.all([
+    fetchFacts(art.qid, o), reverseGeocode(lat, lon, 10, o), fetchWeather(lat, lon, o),
+    geoSearch(lat, lon, 3000, 40, o).catch(() => [])
+  ]);
+  const addr = res[1];
+  await fetchWikivoyage([art.title, cityOf(addr), addr && addr.state_district, addr && addr.state], art.title, o);
+  for (const u of Array.from(new Set([p.thumb, art.image].filter(Boolean)))) await pinImage(u, o);
+  const entry = { title: art.title, description: art.description || p.description || "", lat, lon, thumb: p.thumb || art.image || "", bytes: o.size, t: Date.now(), urls: Array.from(o.pin) };
+  const reg = Object.assign({}, offReg); reg[art.title] = entry; offSet(reg);
+  indexPlaces([Object.assign({}, entry, { score: 3 })]);
+  return entry;
+}
+async function removeOffline(title){
+  const reg = Object.assign({}, offReg); const item = reg[title]; if (!item) return;
+  delete reg[title];
+  const still = new Set(); Object.values(reg).forEach(x => (x.urls || []).forEach(u => still.add(u)));
+  if (HAS_CACHE){ try { const c = await caches.open(PIN_CACHE); for (const u of item.urls || []) if (!still.has(u)) await c.delete(u); } catch(e){} }
+  offSet(reg);
+}
+function updateDlBtn(){
+  const b = $("#btnDl"); if (!b) return;
+  const t = state.current && state.current.title;
+  b.disabled = false; b.textContent = t && offReg[t] ? "✓" : "⬇";
+  b.setAttribute("aria-label", t && offReg[t] ? "Downloaded — tap to remove" : "Download for offline");
+}
+$("#btnDl").addEventListener("click", async () => {
+  const p = state.current; if (!p) return;
+  if (offReg[p.title]){
+    if (confirm("Remove the offline copy of " + p.title + "?")){ await removeOffline(p.title); updateDlBtn(); toast("Offline copy removed"); }
+    return;
+  }
+  if (navigator.onLine === false){ toast("You’re offline — connect to download this place."); return; }
+  const b = $("#btnDl"); b.textContent = "…"; b.disabled = true;
+  requestPersist();
+  try { const e = await downloadPlace(p); toast("Downloaded ✓ (" + fmtBytes(e.bytes) + ") — works offline now"); }
+  catch(e){ toast("Download failed — try again with better signal."); }
+  updateDlBtn();
+});
+let dlRun = null;
+function renderAreaDl(spots, around){
+  const todo = spots.slice(0, 30);
+  const have = todo.filter(p => offReg[p.title]).length;
+  $("#areaDl").innerHTML = '<div class="card" style="margin-block-start:14px"><div style="font-weight:700">📥 Heading somewhere with poor signal?</div>' +
+    '<p class="small muted" style="margin:6px 0 10px">Download ' + (have === todo.length ? "" : "these ") + todo.length + ' spots' + (around ? " around " + esc(around) : "") +
+    ' — history, facts, tips, tour and photos — so they work offline. ' + (have ? have + " already downloaded. " : "") + 'Best done on Wi-Fi.</p>' +
+    '<button class="btn small" id="btnArea">' + (dlRun ? "Cancel download" : have === todo.length ? "✓ All downloaded" : "⬇ Download this area") + '</button><div id="areaProg"></div></div>';
+  $("#btnArea").addEventListener("click", () => downloadMany(todo, around));
+}
+async function downloadMany(list, around){
+  if (dlRun){ dlRun.cancel = true; return; }
+  if (navigator.onLine === false){ toast("You’re offline — connect to download."); return; }
+  const run = dlRun = { cancel: false };
+  requestPersist();
+  const btn0 = $("#btnArea"); if (btn0){ btn0.textContent = "Cancel download"; btn0.classList.add("secondary"); }
+  let ok = 0, fail = 0, bytes = 0;
+  for (let i = 0; i < list.length; i++){
+    if (run.cancel) break;
+    const p = list[i], prog = $("#areaProg");
+    if (prog) prog.innerHTML = '<div class="progress"><div style="inline-size:' + Math.round(i / list.length * 100) + '%"></div></div><div class="small muted">' + (i + 1) + ' of ' + list.length + ': ' + esc(p.title) + '</div>';
+    if (offReg[p.title]){ ok++; continue; }
+    try { const e = await downloadPlace(p); ok++; bytes += e.bytes || 0; } catch(e){ fail++; }
+  }
+  dlRun = null;
+  const btn = $("#btnArea"); if (btn){ btn.textContent = "⬇ Download this area"; btn.classList.remove("secondary"); }
+  const prog = $("#areaProg");
+  if (prog) prog.innerHTML = '<div class="note" style="margin:10px 0 0">' + (run.cancel ? "Stopped. " : "Done! ") + ok + ' place' + (ok === 1 ? "" : "s") + ' ready offline' +
+    (bytes ? ' (' + fmtBytes(bytes) + ' added)' : "") + (fail ? ', ' + fail + ' couldn’t be downloaded' : "") + '.' +
+    '<br>For directions without signal, also download an offline map in Apple Maps (tap your profile picture → Offline Maps).</div>';
+  if (!around && state.nearbyView && !state.nearbyView.offline){
+    renderNearbyBadges();
+  }
+}
+function renderNearbyBadges(){
+  $$("#nearbyList .item").forEach(b => {
+    const p = state.nearby[+b.dataset.i]; if (!p) return;
+    const nm = $(".name", b);
+    if (nm && offReg[p.title] && !$(".offb", nm)) nm.insertAdjacentHTML("beforeend", '<span class="badge offb">✓ Offline</span>');
+  });
+}
+
 /* ---------------- guided tour (speech) ---------------- */
 const synth = window.speechSynthesis;
 let speakToken = 0;
+const NOVELTY = /(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley)/i;
+function voiceQuality(v){ const s = (v.voiceURI + " " + v.name).toLowerCase(); return /premium/.test(s) ? 2 : /enhanced|neural|natural/.test(s) ? 1 : 0; }
+function voiceRank(v){ return voiceQuality(v) * 10 + (/en[-_]IN/i.test(v.lang) ? 3 : /en[-_]GB/i.test(v.lang) ? 2 : /en[-_]US/i.test(v.lang) ? 1 : 0); }
+function enVoices(){
+  if (!synth) return [];
+  return synth.getVoices().filter(v => /^en/i.test(v.lang) && !NOVELTY.test(v.name)).sort((a, b) => voiceRank(b) - voiceRank(a) || a.name.localeCompare(b.name));
+}
 function pickVoice(){
-  if (!synth) return null;
-  const vs = synth.getVoices();
-  return vs.find(v => /en-IN/i.test(v.lang)) || vs.find(v => /en-GB/i.test(v.lang) && /daniel|serena|kate/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null;
+  const vs = enVoices(); if (!vs.length) return null;
+  const saved = store.get("voice", "");
+  return vs.find(v => v.voiceURI === saved) || vs[0];
 }
 function renderTour(){
   const box = $("#tourBox"); if (!box || !state.tour) return;
   const T = state.tour, s = T.stops[T.idx];
   const rate = store.get("rate", 1);
+  const vs = enVoices(), cur = pickVoice();
   box.innerHTML =
     '<div class="player"><div class="small" style="opacity:.85">Stop ' + (T.idx + 1) + ' of ' + T.stops.length + '</div>' +
     '<div class="stopname">' + esc(s.name) + '</div>' +
     '<div class="ctrl"><button id="tPrev" aria-label="Previous">⏮</button><button class="play" id="tPlay" aria-label="Play">' + (T.playing ? "⏸" : "▶") + '</button><button id="tNext" aria-label="Next">⏭</button></div>' +
     '<div class="row" style="justify-content:center;margin-block-start:8px"><span class="small">Speed</span><select id="tRate">' +
-      [0.8, 0.9, 1, 1.1, 1.25].map(r => '<option value="' + r + '"' + (r === rate ? " selected" : "") + '>' + r + '×</option>').join("") + '</select></div></div>' +
+      [0.8, 0.9, 1, 1.1, 1.25].map(r => '<option value="' + r + '"' + (r === rate ? " selected" : "") + '>' + r + '×</option>').join("") + '</select>' +
+      (vs.length ? '<span class="small">Voice</span><select id="tVoice">' + vs.map(v => '<option value="' + esc(v.voiceURI) + '"' + (cur && v.voiceURI === cur.voiceURI ? " selected" : "") + '>' +
+        esc(v.name.replace(/\s*\((enhanced|premium)\)/i, "") + (voiceQuality(v) === 2 ? " ★★" : voiceQuality(v) ? " ★" : "") + " · " + v.lang) + '</option>').join("") + '</select>' : "") +
+    '</div></div>' +
+    (synth && vs.length && !vs.some(v => voiceQuality(v) > 0) ? '<p class="small muted">Tip: for a more natural voice, download an “Enhanced” or “Premium” English voice on your iPhone (Settings → Accessibility → Spoken Content → Voices → English), then reopen the app and pick it here.</p>' : "") +
     (synth ? "" : '<p class="small muted">Audio narration isn’t available on this browser — you can still read the tour below.</p>') +
     '<ol class="stops">' + T.stops.map((x, i) => '<li class="' + (i === T.idx ? "cur" : "") + '" data-i="' + i + '"><div class="sn">' + (i + 1) + '. ' + esc(x.name) + '</div>' + (i === T.idx ? '<div class="st">' + esc(x.text) + '</div>' : "") + '</li>').join("") + '</ol>';
   $("#tPlay").addEventListener("click", () => { if (T.playing) stopSpeech(); else playStop(T.idx); });
   $("#tPrev").addEventListener("click", () => playStop(Math.max(0, T.idx - 1), !T.playing));
   $("#tNext").addEventListener("click", () => playStop(Math.min(T.stops.length - 1, T.idx + 1), !T.playing));
   $("#tRate").addEventListener("change", e => { store.set("rate", +e.target.value); if (T.playing) playStop(T.idx); });
+  const tv = $("#tVoice"); if (tv) tv.addEventListener("change", e => { store.set("voice", e.target.value); if (T.playing) playStop(T.idx); else { const u = new SpeechSynthesisUtterance("Hello! I’ll be your guide today."); const v = pickVoice(); if (v){ u.voice = v; u.lang = v.lang; } synth.cancel(); synth.speak(u); } });
   $$(".stops li", box).forEach(li => li.addEventListener("click", () => playStop(+li.dataset.i, !T.playing)));
 }
 function stopSpeech(){
@@ -898,7 +1178,7 @@ function playStop(i, silent){
   };
   speakNext();
 }
-if (synth && "onvoiceschanged" in synth) synth.addEventListener("voiceschanged", () => {});
+if (synth && "onvoiceschanged" in synth) synth.addEventListener("voiceschanged", () => { if (state.tour && !state.tour.playing) renderTour(); });
 
 /* ---------------- detail navigation ---------------- */
 function closeDetail(fromCode){
@@ -914,6 +1194,13 @@ window.addEventListener("popstate", () => closeDetail("pop"));
 
 /* ---------------- init ---------------- */
 renderSuggest();
+updateNet();
+if ("serviceWorker" in navigator && location.protocol === "https:"){
+  navigator.serviceWorker.register("sw.js")
+    .then(() => navigator.serviceWorker.ready)
+    .then(reg => { if (reg.active) reg.active.postMessage({ type: "cache-page", url: location.origin + location.pathname }); })
+    .catch(() => {});
+}
 const last = store.get("lastLoc", null);
 if (last && navigator.permissions && navigator.permissions.query){
   navigator.permissions.query({ name: "geolocation" }).then(r => { if (r.state === "granted") loadNearby(false); }).catch(() => {});
