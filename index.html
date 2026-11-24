@@ -163,6 +163,16 @@ table.hours td:last-child{text-align:end}
 table.hours tr.today td{font-weight:700;color:var(--brand)}
 .kv{display:flex;flex-wrap:wrap;gap:6px;margin-block-start:10px}
 .kv span{background:var(--brand-soft);border-radius:999px;padding:4px 10px;font-size:13px}
+.food{list-style:none;margin:0;padding:0}
+.food li{padding:8px 0;border-block-end:1px solid var(--line)}
+.food li:last-child{border-block-end:0}
+.fn{font-weight:600}
+.eggb,.vegb{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;vertical-align:middle;margin-inline-start:4px}
+.eggb{background:#fef3c7;color:#92400e}
+.vegb{background:#dcfce7;color:#166534}
+.vegb.soft{background:var(--brand-soft);color:var(--brand)}
+.eats{display:flex;flex-direction:column;gap:8px}
+.eat{display:block;text-decoration:none;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
 .gbtn{display:block;text-align:center;text-decoration:none;background:var(--brand);color:#fff;border-radius:12px;padding:10px;font-weight:600;margin-block-start:8px}
 </style>
 </head>
@@ -805,7 +815,7 @@ async function fetchWikivoyage(candidates, placeTitle, o){
       // mentions of the place itself
       const key = placeTitle.replace(/\s*\(.*?\)\s*/g, "").trim();
       const mentions = paras(p.extract).filter(pp => !/^=/.test(pp) && pp.toLowerCase().includes(key.toLowerCase())).slice(0, 3);
-      return { title: p.title, sections: picked, mentions, url: "https://en.wikivoyage.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")) };
+      return { title: p.title, sections: picked, mentions, eat: wvFood(p.extract), url: "https://en.wikivoyage.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")) };
     } catch(e){ /* try next */ }
   }
   return null;
@@ -938,6 +948,7 @@ async function openPlace(p, opts){
       '<div id="factsBox"></div>' +
       '<div class="card"><h3>🗺️ Getting there</h3><div id="wayBox">' + spinner() + '</div></div>' +
       '<div class="card"><h3>🎒 Before you go</h3><div id="tipsBox">' + spinner() + '</div></div>' +
+      '<div class="card"><h3>🍽️ Must-try food <span class="vegb">🟢 Veg</span></h3><div id="foodBox">' + spinner() + '</div></div>' +
       (facts.length ? '<div class="card"><h3>💡 Did you know?</h3><ul class="tips dyk">' + facts.map(f => '<li>' + esc(f) + '</li>').join("") + '</ul></div>' : "") +
       '<div class="card"><h3>📜 History</h3><div class="prose clamp" id="histBox">' +
         paras(historySec ? historySec.text : secs[0].text).slice(0, 12).map(x => '<p>' + esc(x) + '</p>').join("") +
@@ -945,7 +956,7 @@ async function openPlace(p, opts){
       '<div class="card" id="tourCard"><h3>🎧 Guided tour</h3><div id="tourBox">' + spinner() + '</div></div>' +
       '<div class="card"><h3>📍 Continue exploring nearby</h3><div id="nextBox">' + spinner() + '</div></div>' +
     '</div>' +
-    '<div class="attrib">Content from <a href="' + esc(art.url) + '" target="_blank" rel="noopener">Wikipedia</a>, Wikidata, Wikivoyage (CC BY-SA), photos from Wikimedia Commons (credits on each photo), opening hours and map © OpenStreetMap contributors, weather by Open-Meteo. Tips are general guidance — always check official timings.</div>';
+    '<div class="attrib">Content from <a href="' + esc(art.url) + '" target="_blank" rel="noopener">Wikipedia</a>, Wikidata, Wikivoyage (CC BY-SA), photos from Wikimedia Commons (credits on each photo), opening hours and map © OpenStreetMap contributors, weather by Open-Meteo. Tips and food suggestions are general guidance — always check official timings.</div>';
 
   $("#histMore").addEventListener("click", () => { const h = $("#histBox"); const open = h.classList.toggle("clamp"); $("#histMore").textContent = open ? "Read more" : "Show less"; });
   $("#goTour").addEventListener("click", () => { $("#tourCard").scrollIntoView({ behavior: "smooth" }); if (state.tour) playStop(state.tour.idx); });
@@ -960,6 +971,7 @@ async function openPlace(p, opts){
 
   const weather$ = fetchWeather(lat, lon);
   const addr$ = reverseGeocode(lat, lon, 10);
+  const wv$ = addr$.then(addr => fetchWikivoyage([art.title, cityOf(addr), addr && addr.state_district, addr && addr.state], art.title)).catch(() => null);
 
   // Photos
   (async () => {
@@ -1016,8 +1028,7 @@ async function openPlace(p, opts){
     }
     html += '<ul class="tips">' + tips.map(t => '<li>' + esc(t) + '</li>').join("") + '</ul>';
     $("#tipsBox").innerHTML = html + '<div id="wvBox" class="small muted" style="margin-block-start:8px">Looking up local travel advice…</div>';
-    const city = cityOf(addr);
-    const wv = await fetchWikivoyage([art.title, city, addr && addr.state_district, addr && addr.state], art.title);
+    const wv = await wv$;
     const wvBox = $("#wvBox"); if (!wvBox || !alive()) return;
     if (!wv || (!wv.sections.length && !wv.mentions.length)){ wvBox.textContent = ""; return; }
     let w = '<div class="section-title" style="margin-block-start:10px">Local travel advice · ' + esc(wv.title) + '</div>';
@@ -1031,6 +1042,19 @@ async function openPlace(p, opts){
     });
     w += '<p class="small"><a href="' + esc(wv.url) + '" target="_blank" rel="noopener">Full travel guide on Wikivoyage →</a></p>';
     wvBox.className = ""; wvBox.innerHTML = w;
+  })();
+
+  // Must-try food (vegetarian)
+  (async () => {
+    const eats$ = fetchVegEats(lat, lon);
+    const addr = await addr$;
+    if (!alive()) return;
+    const info = foodFor(addr), ctx = { title: art.title, city: cityOf(addr), wvTitle: "" };
+    renderFood($("#foodBox"), info, null, [], ctx);
+    const [eats, wv] = await Promise.all([eats$, wv$]);
+    if (!alive()) return;
+    ctx.wvTitle = wv ? wv.title : "";
+    renderFood($("#foodBox"), info, eats, wv ? wv.eat : [], ctx);
   })();
 
   // Nearby + tour
@@ -1287,6 +1311,634 @@ function renderHours(box, tags, gUrl){
   box.innerHTML = h;
 }
 
+/* ---------------- must-try vegetarian food (built in, works offline) ----------------
+   Every dish is vegetarian; e:1 marks dishes that contain egg. */
+const FD = (n, d, e) => ({ n, d, e: !!e });
+const FOOD_IN_TIP = "Look for “pure veg” boards and the green-dot symbol on menus. Mixed restaurants often cook veg and non-veg in the same kitchen, so ask if that matters to you.";
+const FOOD_NE_TIP = "Food in the North-East leans heavily on meat and fish (often dried or fermented fish in chutneys). Ask for “veg only, no fish” and look for Marwari or South Indian “pure veg” restaurants in town.";
+const FOOD_STATES = {
+  "karnataka": { n: "Karnataka", d: [
+    FD("Masala dosa", "Crisp rice-and-lentil crepe with spiced potato; the Karnataka style hides a red garlic chutney inside."),
+    FD("Bisi bele bath", "Hot rice, lentils and vegetables with a tangy spice blend, finished with ghee and crunchy boondi."),
+    FD("Mysore pak", "Rich gram-flour and ghee sweet first made in the Mysore Palace kitchens."),
+    FD("Akki roti", "Rice-flour flatbread with onion, dill and green chilli, eaten with chutney."),
+    FD("Mangalore buns", "Slightly sweet, fluffy banana puris from coastal Karnataka."),
+    FD("Filter coffee", "Strong South Indian coffee with chicory and frothy milk, served in a steel tumbler.")] },
+  "kerala": { n: "Kerala", d: [
+    FD("Kerala sadya", "Banana-leaf feast of 20+ vegetarian dishes — avial, olan, thoran, sambar and payasam."),
+    FD("Appam with vegetable stew", "Lacy, soft-centred rice pancakes with a mild coconut-milk stew."),
+    FD("Puttu and kadala curry", "Steamed rice-and-coconut cylinders with black-chickpea curry — the classic breakfast."),
+    FD("Avial", "Mixed vegetables in a coconut and curd sauce, finished with coconut oil and curry leaves."),
+    FD("Pazham pori", "Ripe plantain fritters, Kerala’s favourite tea-time snack."),
+    FD("Banana chips", "Thin raw-banana chips fried in coconut oil — great to carry home.")] },
+  "tamil nadu": { n: "Tamil Nadu", d: [
+    FD("Idli, vada and sambar", "Steamed rice cakes and crisp lentil doughnuts with sambar and coconut chutney."),
+    FD("Ven pongal", "Comforting rice and moong dal with black pepper, cumin, cashews and ghee."),
+    FD("Ghee roast dosa", "Extra-thin, paper-crisp dosa roasted with ghee."),
+    FD("Kuzhi paniyaram", "Crisp-outside, soft-inside dumplings made in a special pan — sweet or savoury."),
+    FD("Tirunelveli halwa", "Glossy wheat halwa slow-cooked with ghee and sugar."),
+    FD("Filter coffee (degree kaapi)", "Frothy chicory coffee poured between tumbler and dabarah to cool.")] },
+  "andhra pradesh": { n: "Andhra Pradesh", d: [
+    FD("Pesarattu with upma", "Green-moong crepe stuffed with semolina upma, eaten with ginger chutney."),
+    FD("Gutti vankaya", "Baby brinjals stuffed with a peanut, sesame and spice paste."),
+    FD("Gongura pachadi", "Tangy sorrel-leaf chutney — mix with hot rice and ghee."),
+    FD("Pulihora", "Tamarind rice with peanuts and curry leaves, a temple favourite."),
+    FD("Pootharekulu", "Paper-thin rice-starch sheets layered with ghee and sugar, from Atreyapuram."),
+    FD("Andhra veg meals", "Fiery thali with podi, pappu (dal), pickles and ghee — ask for “veg meals”.")] },
+  "telangana": { n: "Telangana", d: [
+    FD("Mirchi ka salan", "Chillies in a nutty peanut, sesame and tamarind gravy."),
+    FD("Bagara baingan", "Small brinjals in a rich peanut-sesame-coconut sauce."),
+    FD("Sarva pindi", "Crisp rice-flour pancake with chana dal, sesame and chillies."),
+    FD("Double ka meetha", "Fried bread soaked in saffron-cardamom milk, topped with nuts."),
+    FD("Qubani ka meetha", "Stewed dried apricots, often served with cream or ice cream."),
+    FD("Osmania biscuits with Irani chai", "Sweet-salty butter biscuits dipped in strong milky tea.")] },
+  "maharashtra": { n: "Maharashtra", d: [
+    FD("Vada pav", "Spiced potato fritter in a soft bun with garlic and green chutneys."),
+    FD("Misal pav", "Spicy sprouted-moth-bean curry topped with farsan, onion and lemon, with pav."),
+    FD("Pav bhaji", "Buttery mashed-vegetable curry with toasted pav."),
+    FD("Puran poli", "Flatbread stuffed with sweet chana dal and jaggery, served with ghee."),
+    FD("Sabudana khichdi", "Tapioca pearls with peanuts and potato — a fasting-day favourite."),
+    FD("Ukadiche modak", "Steamed rice dumplings filled with coconut and jaggery, loved around Ganesh Chaturthi.")] },
+  "goa": { n: "Goa", tip: "Many Goan curries use fish or pork. Saraswat (Hindu Goan) eateries and “pure veg” restaurants serve meat-free versions — ask for veg xacuti or veg thali.", d: [
+    FD("Goan veg thali", "Kokum curry, veg xacuti, sol kadhi, rice and papad on one plate."),
+    FD("Khatkhatem", "Hearty mixed-vegetable and coconut stew made during festivals."),
+    FD("Alsande tonak", "Black-eyed bean curry with roasted coconut and Goan spices."),
+    FD("Bhaji pav", "Goan-style breakfast of light pav with spiced potato or pea bhaji."),
+    FD("Patoleo", "Rice cakes steamed in turmeric leaves with coconut-jaggery filling."),
+    FD("Bebinca", "Layered coconut-milk and egg pudding — Goa’s queen of desserts.", 1),
+    FD("Serradura", "“Sawdust pudding” of whipped cream and crushed Marie biscuits.")] },
+  "gujarat": { n: "Gujarat", d: [
+    FD("Gujarati thali", "Unlimited thali with dal, kadhi, shaak, farsan, rotli, rice and a sweet."),
+    FD("Dhokla", "Spongy steamed gram-flour cake with mustard-seed tempering."),
+    FD("Khandvi", "Thin gram-flour rolls with coconut, sesame and coriander."),
+    FD("Undhiyu", "Winter mixed-vegetable dish slow-cooked with fenugreek dumplings."),
+    FD("Fafda-jalebi", "Crunchy gram-flour strips with hot jalebi — a Sunday-morning ritual."),
+    FD("Dabeli", "Sweet-spicy potato in a bun with pomegranate and masala peanuts.")] },
+  "rajasthan": { n: "Rajasthan", d: [
+    FD("Dal baati churma", "Baked wheat balls dunked in ghee with dal and sweet crumbled churma."),
+    FD("Gatte ki sabzi", "Gram-flour dumplings in a tangy yogurt curry."),
+    FD("Ker sangri", "Desert beans and berries cooked with spices — unique to the Thar."),
+    FD("Pyaaz kachori", "Flaky fried pastry with a spiced onion filling."),
+    FD("Ghevar", "Honeycomb-like disc of fried batter soaked in syrup, topped with rabri."),
+    FD("Bajre ki roti with garlic chutney", "Pearl-millet flatbread with white butter and fiery chutney.")] },
+  "punjab": { n: "Punjab", d: [
+    FD("Sarson da saag and makki di roti", "Mustard-greens curry with maize flatbread, white butter and jaggery (winter)."),
+    FD("Amritsari kulcha with chole", "Crisp, stuffed tandoor bread with chickpea curry and lots of butter."),
+    FD("Chole bhature", "Spicy chickpeas with large fluffy fried bread."),
+    FD("Rajma chawal", "Kidney-bean curry with rice — Punjab’s comfort food."),
+    FD("Paneer tikka", "Spiced cottage-cheese cubes grilled in a tandoor."),
+    FD("Lassi", "Thick sweet yogurt drink, often topped with malai.")] },
+  "haryana": { n: "Haryana", d: [
+    FD("Kadhi pakora", "Gram-flour fritters in a tangy yogurt curry."),
+    FD("Bajra roti with white butter", "Pearl-millet flatbread with fresh butter and jaggery."),
+    FD("Bajra khichdi", "Rustic pearl-millet and lentil khichdi with ghee."),
+    FD("Malpua", "Sweet fried pancakes soaked in syrup."),
+    FD("Lassi", "Thick yogurt drink, sweet or salted.")] },
+  "delhi": { n: "Delhi", tip: "Old Delhi is famous for Mughlai meat dishes, so choose places with “pure veg” boards — Paranthe Wali Gali is fully vegetarian.", d: [
+    FD("Chole bhature", "Spicy chickpeas with huge fluffy fried bread — Delhi’s favourite breakfast."),
+    FD("Parathas at Paranthe Wali Gali", "Deep-fried stuffed parathas (aloo, paneer, rabri) in Chandni Chowk."),
+    FD("Chaat", "Aloo tikki, golgappe and dahi bhalla — tangy, sweet and spicy."),
+    FD("Bedmi puri with aloo sabzi", "Lentil-stuffed puris with spicy potato curry."),
+    FD("Daulat ki chaat", "Airy saffron milk foam sold in Old Delhi on winter mornings."),
+    FD("Kulfi falooda", "Dense Indian ice cream with vermicelli and rose syrup."),
+    FD("Jalebi", "Hot, crisp spirals of syrup-soaked batter.")] },
+  "uttar pradesh": { n: "Uttar Pradesh", d: [
+    FD("Kachori sabzi", "Flaky lentil kachori with spicy potato curry — a breakfast classic."),
+    FD("Bedmi puri and jalebi", "Lentil puris with aloo sabzi, followed by hot jalebi."),
+    FD("Basket chaat", "A crisp potato basket filled with chaat, curd and chutneys."),
+    FD("Agra petha", "Translucent ash-gourd sweet, plain or flavoured."),
+    FD("Mathura peda", "Caramelised milk fudge famous in Krishna’s hometown."),
+    FD("Banarasi paan", "Betel-leaf digestive with sweet fillings (ask for sweet, no tobacco).")] },
+  "uttarakhand": { n: "Uttarakhand", d: [
+    FD("Aloo ke gutke", "Spiced hill potatoes stir-fried with jakhiya seeds."),
+    FD("Kafuli", "Spinach and fenugreek gravy thickened with rice paste."),
+    FD("Bhatt ki churkani", "Black soybean curry from the Kumaon hills."),
+    FD("Mandua roti", "Finger-millet flatbread with ghee and jaggery."),
+    FD("Bal mithai", "Brown fudge coated with sugar balls, from Almora."),
+    FD("Singori", "Khoya sweet wrapped in a maalu leaf cone.")] },
+  "himachal pradesh": { n: "Himachal Pradesh", d: [
+    FD("Siddu", "Steamed wheat bread stuffed with poppy seeds or walnuts, with ghee."),
+    FD("Himachali dham", "Festive feast of rajma, madra (chickpeas in yogurt), dal and sweet rice."),
+    FD("Chana madra", "Chickpeas slow-cooked in spiced yogurt."),
+    FD("Babru", "Fried bread stuffed with black-gram paste."),
+    FD("Veg momos and thukpa", "Tibetan-style dumplings and noodle soup, everywhere in the hills.")] },
+  "jammu and kashmir": { n: "Jammu & Kashmir", tip: "The famous Kashmiri wazwan feast is meat-based. Vegetarian Kashmiri Pandit dishes are easy to find in Jammu and in veg restaurants in Srinagar.", d: [
+    FD("Kashmiri dum aloo", "Baby potatoes in a red yogurt-fennel gravy."),
+    FD("Nadru yakhni", "Lotus stem in a delicate yogurt and fennel sauce."),
+    FD("Haak saag", "Kashmiri collard greens cooked in mustard oil."),
+    FD("Rajma chawal (Bhaderwah)", "Small, sweet Jammu-region kidney beans with rice."),
+    FD("Kalari cheese", "Stretchy Jammu cheese fried in its own fat, eaten in bread."),
+    FD("Kahwa", "Green tea with saffron, cardamom and almonds.")] },
+  "ladakh": { n: "Ladakh", d: [
+    FD("Skyu", "Hand-rolled pasta stewed with vegetables — Ladakh’s comfort food."),
+    FD("Chhutagi", "Bow-shaped pasta in a vegetable broth."),
+    FD("Khambir", "Thick local bread, great with apricot jam."),
+    FD("Thukpa (veg)", "Hearty noodle soup with vegetables."),
+    FD("Butter tea (gur gur chai)", "Salty churned tea with butter — warming at altitude.")] },
+  "west bengal": { n: "West Bengal", tip: "Bengali cooking often uses fish; look for “niramish” (vegetarian) dishes, which skip even onion and garlic.", d: [
+    FD("Luchi with cholar dal", "Puffed fried bread with sweet-spiced Bengal gram dal."),
+    FD("Shukto", "Lightly bitter mixed-vegetable stew served at the start of a meal."),
+    FD("Aloo posto", "Potatoes in a creamy poppy-seed paste."),
+    FD("Phuchka", "Kolkata’s tangy version of pani puri with tamarind water."),
+    FD("Mishti doi", "Sweet caramelised yogurt set in clay pots."),
+    FD("Rosogolla and sandesh", "Spongy chhena balls in syrup and delicate milk fudge.")] },
+  "odisha": { n: "Odisha", d: [
+    FD("Dalma", "Lentils cooked with vegetables and roasted cumin — temple-style comfort food."),
+    FD("Pakhala bhata", "Fermented water rice with fried veggies, eaten on hot days."),
+    FD("Chhena poda", "Caramelised baked cottage-cheese cake — Odisha’s signature sweet."),
+    FD("Dahibara aloodum", "Lentil fritters in thin yogurt with spicy potato curry (Cuttack)."),
+    FD("Rasagola", "Soft, spongy chhena balls in syrup."),
+    FD("Santula", "Lightly spiced mixed-vegetable stew.")] },
+  "bihar": { n: "Bihar", d: [
+    FD("Litti chokha", "Roasted wheat balls stuffed with sattu, with smoky aubergine-tomato mash."),
+    FD("Sattu paratha", "Flatbread stuffed with roasted gram flour, garlic and pickle."),
+    FD("Thekua", "Crunchy jaggery-wheat cookies made for Chhath."),
+    FD("Khaja", "Flaky layered sweet from Silao, near Nalanda."),
+    FD("Malpua", "Sweet fried pancakes soaked in syrup.")] },
+  "jharkhand": { n: "Jharkhand", d: [
+    FD("Dhuska with ghugni", "Fried rice-lentil cakes with spiced chickpea curry."),
+    FD("Litti chokha", "Sattu-stuffed roasted wheat balls with smoky vegetable mash."),
+    FD("Pitha", "Steamed rice-flour dumplings, sweet or savoury."),
+    FD("Thekua", "Crunchy jaggery cookies.")] },
+  "madhya pradesh": { n: "Madhya Pradesh", d: [
+    FD("Poha-jalebi", "Light flattened-rice breakfast with sev, eaten with hot jalebi."),
+    FD("Bhutte ka kees", "Grated corn cooked in milk and spices."),
+    FD("Dal bafla", "Boiled-then-baked wheat balls dipped in ghee, with dal."),
+    FD("Sabudana khichdi", "Tapioca pearls with peanuts — Indore style is extra-tangy."),
+    FD("Mawa bati", "Khoya-stuffed gulab-jamun-like sweet.")] },
+  "chhattisgarh": { n: "Chhattisgarh", d: [
+    FD("Chila", "Thin rice-flour pancakes with chutney."),
+    FD("Fara", "Steamed rice-flour dumplings tempered with mustard and curry leaves."),
+    FD("Aamat", "Tribal mixed-vegetable stew from Bastar."),
+    FD("Dehrori", "Fried rice-flour sweet soaked in syrup.")] },
+  "assam": { n: "Assam", tip: FOOD_NE_TIP, d: [
+    FD("Aloo pitika", "Mashed potato with mustard oil, onion and green chilli."),
+    FD("Khar (veg)", "Alkaline curry with raw papaya — ask for the vegetable version."),
+    FD("Til pitha", "Rolled rice-flour crepes filled with sesame and jaggery."),
+    FD("Joha rice", "Fragrant short-grain Assamese rice."),
+    FD("Assam tea", "Strong, malty tea straight from the estates.")] },
+  "sikkim": { n: "Sikkim", d: [
+    FD("Veg momos", "Steamed dumplings with spicy tomato chutney."),
+    FD("Thukpa (veg)", "Noodle soup with vegetables."),
+    FD("Gundruk soup", "Tangy soup of fermented leafy greens."),
+    FD("Sel roti", "Ring-shaped, crisp rice-flour bread."),
+    FD("Chhurpi", "Local yak or cow cheese — soft in curries, hard as a chewy snack.")] },
+  "meghalaya": { n: "Meghalaya", tip: FOOD_NE_TIP, d: [
+    FD("Pukhlein", "Sweet fried rice-flour and jaggery cakes."),
+    FD("Tungrymbai (veg)", "Fermented soybean paste with sesame — ask for it without pork."),
+    FD("Pumaloi", "Steamed powdered rice, eaten with vegetable curries.")] },
+  "manipur": { n: "Manipur", tip: FOOD_NE_TIP, d: [
+    FD("Chak-hao kheer", "Purple black-rice pudding."),
+    FD("Veg thali", "Rice with seasonal vegetable dishes — ask for no fish.")] },
+  "north east": { n: "North-East India", tip: FOOD_NE_TIP, d: [
+    FD("Veg momos", "Steamed dumplings with fiery chilli chutney."),
+    FD("Thukpa (veg)", "Hearty noodle soup with vegetables."),
+    FD("Black-rice kheer", "Sweet pudding made with the region’s purple-black rice."),
+    FD("Local tea", "Fresh hill-grown tea, often served black or with milk.")] },
+  "puducherry": { n: "Puducherry", d: [
+    FD("French bakery croissants", "Flaky butter croissants and pastries in the French Quarter.", 1),
+    FD("Crêpes", "Sweet crêpes with chocolate, banana or honey at beach cafés.", 1),
+    FD("South Indian tiffin", "Idli, dosa and pongal at local messes."),
+    FD("Filter coffee", "Frothy South Indian coffee.")] },
+  "chandigarh": { n: "Chandigarh", d: [
+    FD("Chole bhature", "Spicy chickpeas with fluffy fried bread."),
+    FD("Amritsari kulcha", "Crisp stuffed bread with chole and butter."),
+    FD("Lassi", "Thick sweet yogurt drink.")] }
+};
+const FOOD_STATE_ALIAS = { "orissa": "odisha", "pondicherry": "puducherry", "national capital territory of delhi": "delhi", "nct of delhi": "delhi", "new delhi": "delhi",
+  "jammu & kashmir": "jammu and kashmir", "arunachal pradesh": "north east", "nagaland": "north east", "mizoram": "north east", "tripura": "north east" };
+const FOOD_CITIES = {
+  "bengaluru": { n: "Bengaluru", d: [
+    FD("Masala dosa at a heritage darshini", "Try the crisp, butter-rich versions at old Basavanagudi and Malleswaram eateries."),
+    FD("Rava idli", "Semolina idli invented in Bengaluru during WWII when rice was scarce."),
+    FD("Thatte idli", "Plate-sized, extra-soft idli with chutney and white butter."),
+    FD("Benne dosa", "Davangere-style butter dosa — crisp outside, soft inside."),
+    FD("Chow chow bath", "Spicy khara bath and sweet kesari bath on one plate."),
+    FD("Maddur vade", "Crunchy onion-semolina fritter, perfect with coffee."),
+    FD("Filter coffee", "Strong chicory coffee in a steel tumbler.")] },
+  "mysuru": { n: "Mysuru", d: [
+    FD("Mysore pak", "Ghee-rich gram-flour sweet born in the palace kitchens."),
+    FD("Mysore masala dosa", "Dosa spread with fiery red chutney and stuffed with potato."),
+    FD("Mylari dosa", "Soft, spongy dosa with butter and coconut chutney."),
+    FD("Mysore bonda", "Fluffy fried dumplings of urad dal batter."),
+    FD("Nanjangud rasabale", "Small, fragrant local bananas.")] },
+  "mumbai": { n: "Mumbai", d: [
+    FD("Vada pav", "Mumbai’s iconic potato-fritter burger with chutneys."),
+    FD("Pav bhaji", "Buttery vegetable mash with toasted pav — try it at Juhu or Girgaum Chowpatty."),
+    FD("Bhel puri and sev puri", "Tangy puffed-rice chaat, best at the beach."),
+    FD("Bombay sandwich", "Layered veg sandwich with green chutney, toasted or plain."),
+    FD("Bun maska and Irani chai", "Butter-loaded bun with milky tea at an old Irani café."),
+    FD("Akuri on toast", "Parsi spiced scrambled eggs.", 1),
+    FD("Falooda", "Rose milk with vermicelli, basil seeds and ice cream.")] },
+  "pune": { n: "Pune", d: [
+    FD("Misal pav", "Fiery sprout curry with farsan — Pune’s pride."),
+    FD("Bhakarwadi", "Spiral, sweet-spicy fried snack."),
+    FD("Mastani", "Thick milkshake topped with ice cream and dry fruits."),
+    FD("Sabudana vada", "Crisp tapioca-pearl and peanut fritters.")] },
+  "ahmedabad": { n: "Ahmedabad", d: [
+    FD("Manek Chowk night food", "After 9 pm the jewellery market turns into a food street — pav bhaji, sandwiches, kulfi."),
+    FD("Gujarati thali", "Unlimited thali with farsan, shaak, dal, kadhi and sweets."),
+    FD("Fafda-jalebi", "Gram-flour strips with hot jalebi."),
+    FD("Khaman dhokla", "Soft, tangy steamed gram-flour cake.")] },
+  "hyderabad": { n: "Hyderabad", d: [
+    FD("Veg dum biryani", "Fragrant layered rice with vegetables — the famous version is meat, so order “veg biryani”."),
+    FD("Mirchi ka salan", "Chillies in a peanut-sesame-tamarind gravy."),
+    FD("Bagara baingan", "Brinjals in a rich nutty sauce."),
+    FD("Double ka meetha", "Bread pudding soaked in saffron milk."),
+    FD("Qubani ka meetha", "Apricot dessert with cream."),
+    FD("Osmania biscuits with Irani chai", "Sweet-salty biscuits with strong milky tea.")] },
+  "chennai": { n: "Chennai", d: [
+    FD("Idli, vada and sambar", "Classic tiffin — the softest idlis are at old Mylapore messes."),
+    FD("Ghee roast dosa", "Huge, crisp dosa roasted with ghee."),
+    FD("Mini tiffin", "Sampler plate of idli, pongal, dosa, kesari and coffee."),
+    FD("Sundal", "Spiced chickpeas sold on Marina Beach."),
+    FD("Filter coffee", "Chennai’s favourite drink.")] },
+  "madurai": { n: "Madurai", d: [
+    FD("Jigarthanda", "Chilled milk with almond gum, rose syrup and ice cream."),
+    FD("Bun parotta with veg salna", "Soft, layered bun parotta with vegetable curry."),
+    FD("Paruthi paal", "Warm sweet drink made from cotton seeds, jaggery and coconut.")] },
+  "kochi": { n: "Kochi", d: [
+    FD("Kerala sadya", "Banana-leaf vegetarian feast."),
+    FD("Appam with vegetable stew", "Lacy rice pancakes with coconut stew."),
+    FD("Kappa with chammanthi", "Boiled tapioca with fiery coconut-chilli chutney."),
+    FD("Pazham pori", "Plantain fritters with tea.")] },
+  "kolkata": { n: "Kolkata", d: [
+    FD("Phuchka", "Kolkata’s pani puri with tangy tamarind water and spiced potato."),
+    FD("Egg roll", "Paratha with a fried egg, onions and sauces, rolled up — Kolkata street classic.", 1),
+    FD("Luchi-alur dom", "Puffed fried bread with spicy baby potatoes."),
+    FD("Mishti doi and rosogolla", "Sweet yogurt and spongy chhena balls."),
+    FD("Sandesh", "Delicate fresh-cheese sweets, some with nolen gur (date jaggery) in winter."),
+    FD("Jhalmuri", "Puffed rice tossed with mustard oil, onion and chilli."),
+    FD("Mughlai paratha (egg)", "Paratha stuffed with spiced egg — ask for the egg-only version.", 1)] },
+  "jaipur": { n: "Jaipur", d: [
+    FD("Pyaaz kachori", "Flaky onion kachori — a Jaipur breakfast staple."),
+    FD("Dal baati churma", "Ghee-dunked baked wheat balls with dal and sweet churma."),
+    FD("Lassi in a kulhad", "Thick lassi topped with malai, served in a clay cup."),
+    FD("Ghevar", "Honeycomb sweet with rabri, especially around Teej."),
+    FD("Rajasthani thali", "Gatte, ker sangri, kadhi, bajra roti and more.")] },
+  "jodhpur": { n: "Jodhpur", d: [
+    FD("Mirchi vada", "Large chilli stuffed with spiced potato and fried."),
+    FD("Mawa kachori", "Sweet khoya-and-nut kachori dipped in syrup."),
+    FD("Makhaniya lassi", "Saffron lassi topped with butter.")] },
+  "udaipur": { n: "Udaipur", d: [
+    FD("Rajasthani thali", "Dal baati, gatte, kadhi and churma with lake views."),
+    FD("Dal baati churma", "Baked wheat balls, dal and sweet churma."),
+    FD("Kachori and samosa", "Hot fried snacks with tamarind chutney.")] },
+  "amritsar": { n: "Amritsar", tip: "Amritsari fish is famous here — stick to veg dhabas, where kulcha and chole are the stars.", d: [
+    FD("Langar at the Golden Temple", "Free vegetarian community meal served to everyone, all day."),
+    FD("Amritsari kulcha with chole", "Crisp stuffed bread with butter, chole and onion chutney."),
+    FD("Lassi", "Huge glasses of creamy lassi topped with malai."),
+    FD("Phirni", "Chilled ground-rice pudding in a clay bowl."),
+    FD("Chole bhature", "Spicy chickpeas with fried bread.")] },
+  "lucknow": { n: "Lucknow", tip: "Lucknow is famous for Awadhi kebabs and biryani — pick veg restaurants for the chaat and sweets below.", d: [
+    FD("Basket chaat", "Crisp potato basket filled with chaat, curd and chutneys."),
+    FD("Makhan malai", "Airy saffron milk foam, sold only on winter mornings."),
+    FD("Kulfi falooda", "Rich kulfi with vermicelli."),
+    FD("Khasta kachori", "Crumbly kachori with spicy potato curry."),
+    FD("Revdi", "Sesame-jaggery sweets.")] },
+  "agra": { n: "Agra", d: [
+    FD("Agra petha", "Translucent ash-gourd sweet — try kesar or paan flavours."),
+    FD("Bedmi puri and jalebi", "Classic Agra breakfast."),
+    FD("Dalmoth", "Spicy lentil namkeen.")] },
+  "varanasi": { n: "Varanasi", d: [
+    FD("Kachori sabzi and jalebi", "Morning kachoris with spicy potato curry and hot jalebi."),
+    FD("Tamatar chaat", "Spicy tomato chaat unique to Banaras."),
+    FD("Malaiyyo", "Saffron milk foam, only on winter mornings."),
+    FD("Lassi in a kulhad", "Thick lassi with malai in a clay cup."),
+    FD("Banarasi paan", "Sweet paan — ask for no tobacco."),
+    FD("Thandai", "Chilled milk with nuts, fennel and rose.")] },
+  "mathura": { n: "Mathura", d: [
+    FD("Mathura peda", "Caramelised milk fudge."),
+    FD("Kachori sabzi", "Breakfast kachori with potato curry."),
+    FD("Makhan mishri", "White butter with rock sugar — Krishna’s favourite.")] },
+  "indore": { n: "Indore", d: [
+    FD("Poha-jalebi", "Indore’s breakfast, with sev and jeeravan masala."),
+    FD("Sarafa night market", "Jewellery street that becomes a food market after 9 pm."),
+    FD("Bhutte ka kees", "Grated corn cooked with milk and spices."),
+    FD("Garadu", "Spiced fried yam (winter)."),
+    FD("Khopra patties", "Potato patties stuffed with coconut."),
+    FD("Indori shikanji", "Thick, nutty milk-based drink.")] },
+  "rishikesh": { n: "Rishikesh", tip: "Rishikesh is a vegetarian town — meat and alcohol are banned, so every restaurant is veg.", d: [
+    FD("Aloo puri", "Puris with potato curry at ghat-side stalls."),
+    FD("Thali at a riverside café", "Simple North Indian thali by the Ganga."),
+    FD("Shakshuka", "Eggs poached in spiced tomato sauce, popular in backpacker cafés.", 1),
+    FD("Masala chai and banana pancakes", "Café staples after yoga.", 1)] },
+  "darjeeling": { n: "Darjeeling", d: [
+    FD("Darjeeling tea", "Try a first-flush tasting at a tea estate."),
+    FD("Veg momos", "Steamed dumplings with fiery chutney."),
+    FD("Thukpa (veg)", "Noodle soup with vegetables.")] },
+  "shimla": { n: "Shimla", d: [
+    FD("Siddu", "Stuffed steamed bread with ghee."),
+    FD("Chana madra", "Chickpeas in spiced yogurt."),
+    FD("Veg momos", "Steamed dumplings with chilli chutney.")] },
+  "manali": { n: "Manali", d: [
+    FD("Siddu", "Steamed bread stuffed with walnuts or poppy seeds."),
+    FD("Veg thukpa and momos", "Tibetan comfort food."),
+    FD("Apple pie and apple juice", "From the local orchards.", 1)] }
+};
+const FOOD_CITY_ALIAS = { "bangalore": "bengaluru", "bengaluru urban": "bengaluru", "bangalore urban": "bengaluru", "mysore": "mysuru", "bombay": "mumbai",
+  "calcutta": "kolkata", "madras": "chennai", "cochin": "kochi", "ernakulam": "kochi", "benares": "varanasi", "banaras": "varanasi",
+  "secunderabad": "hyderabad", "new delhi": "delhi", "poona": "pune" };
+const FOOD_INDIA = { n: "India", d: [
+  FD("Thali", "A platter of local dals, vegetables, breads and a sweet — the best way to taste a region."),
+  FD("Masala dosa", "Crisp crepe with spiced potato."),
+  FD("Chole bhature", "Spicy chickpeas with fried bread."),
+  FD("Pani puri", "Crisp shells with tangy spiced water."),
+  FD("Lassi", "Thick yogurt drink.")] };
+const FOOD_COUNTRIES = {
+  th: { n: "Thailand", tip: "Fish sauce and shrimp paste are in most dishes. Say “gin jay” (Buddhist-style, no meat or fish) or look for yellow “เจ” flags; “mangsawirat” means vegetarian.", d: [
+    FD("Mango sticky rice", "Sweet coconut sticky rice with ripe mango."),
+    FD("Pad Thai jay", "Rice noodles with tofu, peanuts and egg — ask for no fish sauce.", 1),
+    FD("Green curry with tofu (jay)", "Ask for jay, since normal curry paste contains shrimp paste."),
+    FD("Som tam jay", "Papaya salad — ask for no fish sauce or dried shrimp."),
+    FD("Banana roti", "Crisp pancake with banana and condensed milk.", 1),
+    FD("Thai iced tea (cha yen)", "Sweet orange tea with milk.")] },
+  jp: { n: "Japan", tip: "Dashi (fish stock) hides in miso soup, noodle broths and sauces. Look for shojin ryori (Buddhist temple food) or places marked vegetarian/vegan.", d: [
+    FD("Shojin ryori", "Buddhist temple cuisine — entirely plant-based and beautiful."),
+    FD("Kappa maki and oshinko maki", "Cucumber and pickled-radish sushi rolls."),
+    FD("Vegetable tempura", "Light, crisp battered vegetables — dip in salt, not the dashi sauce.", 1),
+    FD("Matcha sweets and mochi", "Green-tea desserts and soft rice cakes with sweet bean paste."),
+    FD("Taiyaki or dorayaki", "Fish-shaped waffle or pancakes filled with red-bean paste.", 1),
+    FD("Japanese cheesecake", "Wobbly, cotton-soft cheesecake.", 1)] },
+  sg: { n: "Singapore", tip: "Hawker centres have Buddhist “vegetarian” stalls (often with mock meat), and Little India is full of pure-veg restaurants.", d: [
+    FD("Kaya toast with soft-boiled eggs", "Coconut-egg jam toast with kopi.", 1),
+    FD("Roti prata with dal", "Flaky griddle bread with lentil curry."),
+    FD("Banana-leaf veg thali", "South Indian meals in Little India."),
+    FD("Ice kacang or chendol", "Shaved-ice desserts with syrups, beans and coconut milk.")] },
+  my: { n: "Malaysia", tip: "Sambal often contains belacan (shrimp paste) — ask “tanpa belacan”. Indian banana-leaf restaurants are veg-friendly.", d: [
+    FD("Roti canai with dhal", "Flaky flatbread with lentil curry."),
+    FD("Banana-leaf rice (veg)", "Rice with vegetable curries on a banana leaf."),
+    FD("Apam balik", "Crispy peanut-and-sugar folded pancake.", 1),
+    FD("Cendol", "Coconut milk, palm sugar and green jelly over shaved ice."),
+    FD("Teh tarik", "Frothy “pulled” milk tea.")] },
+  id: { n: "Indonesia", tip: "Sambal and many sauces contain terasi (shrimp paste) — ask for “tanpa terasi”. Tempeh and tofu dishes are everywhere.", d: [
+    FD("Gado-gado", "Vegetables, tofu and tempeh in peanut sauce — skip the prawn crackers.", 1),
+    FD("Tempe goreng", "Crispy fried tempeh."),
+    FD("Nasi goreng sayur", "Vegetable fried rice with a fried egg — ask for no terasi.", 1),
+    FD("Pisang goreng", "Banana fritters."),
+    FD("Martabak manis", "Thick sweet pancake with chocolate, cheese or peanuts.", 1)] },
+  vn: { n: "Vietnam", tip: "Look for “chay” restaurants (Buddhist, fully vegetarian), especially near pagodas. Elsewhere, fish sauce (nước mắm) is in almost everything.", d: [
+    FD("Phở chay", "Vegetarian noodle soup at chay restaurants."),
+    FD("Gỏi cuốn chay", "Fresh rice-paper rolls with tofu and herbs."),
+    FD("Bánh xèo chay", "Crispy turmeric crepe with mushrooms and bean sprouts."),
+    FD("Bánh mì chay", "Baguette with tofu, pickles and herbs.", 1),
+    FD("Egg coffee (cà phê trứng)", "Hanoi’s whipped egg-yolk coffee.", 1),
+    FD("Chè", "Sweet dessert soups with beans and coconut.")] },
+  lk: { n: "Sri Lanka", tip: "Maldive fish flakes hide in sambols and some curries — ask for “no Maldive fish”.", d: [
+    FD("Hoppers and egg hoppers", "Bowl-shaped rice pancakes, with an egg cooked inside.", 1),
+    FD("String hoppers with dhal", "Steamed rice-noodle nests with lentil curry."),
+    FD("Veg rice and curry", "Rice with five or six vegetable curries."),
+    FD("Kottu roti (veg or egg)", "Chopped roti stir-fried on a griddle.", 1),
+    FD("Watalappam", "Jaggery-coconut custard with cardamom.", 1)] },
+  np: { n: "Nepal", d: [
+    FD("Dal bhat", "Lentils, rice and vegetables — with free refills."),
+    FD("Veg momos", "Dumplings with tomato-sesame achar."),
+    FD("Juju dhau", "“King curd” — creamy yogurt from Bhaktapur."),
+    FD("Yomari", "Newari rice dumpling filled with molasses and sesame."),
+    FD("Sel roti", "Ring-shaped sweet rice bread."),
+    FD("Chatamari", "Newari rice crepe, often topped with egg.", 1)] },
+  bt: { n: "Bhutan", d: [
+    FD("Ema datshi", "The national dish — chillies in cheese sauce."),
+    FD("Kewa datshi", "Potatoes in cheese sauce, milder."),
+    FD("Red rice", "Nutty Bhutanese rice."),
+    FD("Cheese momos", "Dumplings with cheese filling."),
+    FD("Suja", "Butter tea.")] },
+  ae: { n: "the Gulf region", d: [
+    FD("Luqaimat", "Crisp dumplings drizzled with date syrup."),
+    FD("Manakish", "Flatbread with za’atar or cheese."),
+    FD("Falafel and hummus", "Chickpea fritters and dip with fresh bread."),
+    FD("Kunafa", "Cheese pastry soaked in syrup."),
+    FD("Dates and Arabic coffee", "The traditional welcome.")] },
+  tr: { n: "Türkiye", tip: "Soups and rice can use meat stock — ask “etsiz” (without meat). Olive-oil vegetable dishes (zeytinyağlı) are meat-free.", d: [
+    FD("Menemen", "Eggs scrambled with tomatoes and peppers.", 1),
+    FD("Simit", "Sesame bread ring."),
+    FD("Gözleme", "Thin stuffed flatbread with spinach or cheese."),
+    FD("İmam bayıldı", "Aubergine stuffed with onion and tomato in olive oil."),
+    FD("Künefe", "Hot cheese pastry in syrup."),
+    FD("Baklava and Turkish delight", "Nut pastries and soft lokum.")] },
+  gr: { n: "Greece", d: [
+    FD("Greek salad (horiatiki)", "Tomato, cucumber, olives and feta."),
+    FD("Spanakopita", "Spinach and feta pie in filo pastry.", 1),
+    FD("Gemista (veg)", "Tomatoes and peppers stuffed with herbed rice."),
+    FD("Fava", "Creamy yellow split-pea purée from Santorini."),
+    FD("Loukoumades", "Honey-soaked doughnuts.")] },
+  it: { n: "Italy", tip: "Traditional Parmigiano-Reggiano and Grana Padano use animal rennet, and risotto is often made with meat stock — ask for “brodo vegetale”.", d: [
+    FD("Pizza margherita", "Tomato, mozzarella and basil — best in Naples."),
+    FD("Cacio e pepe", "Roman pasta with pecorino and black pepper."),
+    FD("Pasta alla Norma", "Sicilian pasta with aubergine, tomato and ricotta salata."),
+    FD("Risotto ai funghi", "Creamy mushroom risotto (ask for vegetable stock)."),
+    FD("Gelato", "Try pistachio and stracciatella."),
+    FD("Tiramisù", "Coffee-soaked layers with mascarpone.", 1)] },
+  fr: { n: "France", tip: "French onion soup uses beef stock and many quiches contain lardons — always ask.", d: [
+    FD("Croissant and pain au chocolat", "Buttery breakfast pastries.", 1),
+    FD("Crêpes", "Sweet crêpes with Nutella, sugar-lemon or salted caramel.", 1),
+    FD("Ratatouille", "Provençal vegetable stew."),
+    FD("Cheese and baguette", "Comté, brie or chèvre with fresh bread."),
+    FD("Macarons", "Delicate almond meringue cookies.", 1),
+    FD("Crème brûlée", "Vanilla custard with a caramel crust.", 1)] },
+  es: { n: "Spain", tip: "Jamón appears in many dishes — say “sin carne ni pescado” (no meat or fish).", d: [
+    FD("Tortilla española", "Thick potato-and-onion omelette.", 1),
+    FD("Patatas bravas", "Fried potatoes with spicy sauce."),
+    FD("Pan con tomate", "Toasted bread rubbed with tomato and olive oil."),
+    FD("Pimientos de Padrón", "Blistered green peppers — some are hot!"),
+    FD("Gazpacho", "Chilled tomato soup."),
+    FD("Churros con chocolate", "Fried dough sticks with thick hot chocolate.")] },
+  pt: { n: "Portugal", d: [
+    FD("Pastel de nata", "Custard tarts — best warm with cinnamon.", 1),
+    FD("Queijo da Serra", "Creamy mountain cheese."),
+    FD("Bolo de arroz", "Rice-flour muffin.", 1)] },
+  ch: { n: "Switzerland", d: [
+    FD("Cheese fondue", "Melted cheese with bread (made with white wine)."),
+    FD("Raclette", "Melted cheese scraped over potatoes and pickles."),
+    FD("Rösti", "Crispy grated-potato cake."),
+    FD("Swiss chocolate", "Try a chocolatier in Zurich or Geneva."),
+    FD("Birchermüesli", "Original Swiss overnight oats with apple.")] },
+  de: { n: "Germany", tip: "Gummy sweets (like Haribo) contain gelatin.", d: [
+    FD("Brezel", "Soft pretzel with coarse salt."),
+    FD("Käsespätzle", "Egg noodles with melted cheese and crispy onions.", 1),
+    FD("Kartoffelpuffer", "Potato pancakes with apple sauce.", 1),
+    FD("Apfelstrudel", "Apple strudel with vanilla sauce."),
+    FD("Black Forest cake", "Chocolate, cherries and cream.", 1)] },
+  at: { n: "Austria", d: [
+    FD("Kaiserschmarrn", "Fluffy shredded pancake with plum compote.", 1),
+    FD("Sachertorte", "Vienna’s famous chocolate cake.", 1),
+    FD("Apfelstrudel", "Apple strudel."),
+    FD("Kasnocken", "Cheese dumplings with fried onions.", 1)] },
+  nl: { n: "the Netherlands", d: [
+    FD("Stroopwafel", "Thin waffles with caramel syrup — eat one warm."),
+    FD("Poffertjes", "Mini pancakes with butter and powdered sugar.", 1),
+    FD("Dutch cheese", "Gouda and Edam at a cheese market."),
+    FD("Appeltaart", "Deep Dutch apple pie.", 1)] },
+  be: { n: "Belgium", tip: "Traditional Belgian fries are often fried in beef fat — ask for vegetable oil.", d: [
+    FD("Belgian waffles", "Liège or Brussels style.", 1),
+    FD("Belgian chocolate", "Pralines from a local chocolatier."),
+    FD("Speculoos", "Spiced caramel biscuits.")] },
+  gb: { n: "the UK", tip: "Gravy and Worcestershire sauce often contain meat or anchovies; traditional puddings may use suet. Look for the “V” vegetarian label.", d: [
+    FD("Afternoon tea", "Scones with clotted cream and jam, sandwiches and cakes.", 1),
+    FD("Veggie full English", "Eggs, beans, mushrooms, tomatoes, hash browns and toast.", 1),
+    FD("Jacket potato", "Baked potato with cheese and beans."),
+    FD("Chips with mushy peas", "Chip-shop classic (ask if the chips are fried in vegetable oil)."),
+    FD("Sticky toffee pudding", "Date sponge with toffee sauce.", 1)] },
+  us: { n: "the USA", tip: "Refried beans and tortillas may contain lard, Caesar dressing has anchovies and marshmallows have gelatin — ask.", d: [
+    FD("New York cheese pizza", "Big, foldable slices."),
+    FD("Bagel with cream cheese", "Chewy bagel with schmear."),
+    FD("Pancakes with maple syrup", "Classic diner breakfast.", 1),
+    FD("Mac and cheese", "Baked pasta in cheese sauce."),
+    FD("Cheesecake", "New York style is dense and creamy.", 1),
+    FD("Apple pie", "With a scoop of vanilla ice cream.")] },
+  ca: { n: "Canada", d: [
+    FD("Poutine (veg gravy)", "Fries with cheese curds — ask for vegetarian gravy."),
+    FD("BeaverTails", "Fried dough pastry with sweet toppings."),
+    FD("Maple taffy", "Hot maple syrup set on snow."),
+    FD("Nanaimo bars", "No-bake layered chocolate-custard bars.", 1)] },
+  au: { n: "Australia", d: [
+    FD("Avocado toast and a flat white", "Café-culture classic."),
+    FD("Lamingtons", "Sponge cake squares in chocolate and coconut.", 1),
+    FD("Pavlova", "Meringue with cream and fruit.", 1),
+    FD("Tim Tams", "Chocolate biscuits — try the “Tim Tam slam”.")] },
+  mx: { n: "Mexico", tip: "Beans and tamales are often cooked with lard — ask “sin manteca”.", d: [
+    FD("Quesadillas", "Tortillas with melted cheese, mushrooms or squash blossoms."),
+    FD("Elote or esquites", "Corn with lime, chilli, mayo and cheese.", 1),
+    FD("Chiles rellenos de queso", "Cheese-stuffed peppers in egg batter.", 1),
+    FD("Guacamole", "Fresh avocado dip."),
+    FD("Churros", "Cinnamon-sugar fried dough.")] },
+  cn: { n: "China", tip: "Say “wǒ chī sù” (I eat vegetarian). Lard and meat stock are common, so Buddhist vegetarian restaurants are the safest choice.", d: [
+    FD("Di san xian", "Stir-fried potato, aubergine and pepper."),
+    FD("Tomato and egg stir-fry", "China’s favourite home dish.", 1),
+    FD("Mapo tofu (vegetarian)", "Spicy Sichuan tofu — ask for no meat."),
+    FD("Jianbing", "Crispy egg crepe from street carts.", 1),
+    FD("Veg baozi", "Fluffy steamed buns with vegetable filling.")] },
+  hk: { n: "Hong Kong", d: [
+    FD("Egg tarts", "Flaky pastry with silky custard.", 1),
+    FD("Pineapple bun", "Sweet bun with a crackly top (no pineapple!)."),
+    FD("Egg waffles", "Bubble-shaped crisp waffles.", 1),
+    FD("Mango pomelo sago", "Chilled mango dessert."),
+    FD("Hong Kong milk tea", "Strong, silky “pantyhose” tea.")] },
+  kr: { n: "South Korea", tip: "Kimchi and many broths contain fish sauce or anchovy stock. Temple food restaurants are fully vegetarian.", d: [
+    FD("Bibimbap (no meat)", "Rice with vegetables, gochujang and a fried egg.", 1),
+    FD("Hotteok", "Sweet pancakes with brown sugar and nuts."),
+    FD("Gyeranppang", "Egg bread from street stalls.", 1),
+    FD("Temple food", "Buddhist cuisine with seasonal vegetables.")] },
+  eg: { n: "Egypt", d: [
+    FD("Koshari", "Rice, lentils, pasta and chickpeas with spicy tomato sauce."),
+    FD("Ful medames", "Slow-cooked fava beans."),
+    FD("Ta’ameya", "Egyptian falafel made with fava beans."),
+    FD("Feteer meshaltet", "Flaky layered pastry with honey or cheese."),
+    FD("Om Ali", "Warm bread pudding with nuts.")] },
+  ma: { n: "Morocco", tip: "Harira and couscous are often made with meat broth — ask for vegetable versions.", d: [
+    FD("Vegetable tagine", "Slow-cooked vegetables with spices."),
+    FD("Couscous with seven vegetables", "Friday classic."),
+    FD("Msemen", "Square flaky pancakes with honey."),
+    FD("Zaalouk", "Smoky aubergine-tomato dip."),
+    FD("Mint tea", "Sweet green tea with fresh mint.")] },
+  mu: { n: "Mauritius", d: [
+    FD("Dholl puri", "Thin split-pea flatbread with bean curry and chutney."),
+    FD("Gâteaux piments", "Chilli-lentil fritters."),
+    FD("Farata", "Flaky flatbread with vegetable curry.")] }
+};
+["sa", "qa", "om", "kw", "bh"].forEach(c => FOOD_COUNTRIES[c] = FOOD_COUNTRIES.ae);
+FOOD_COUNTRIES.cz = { n: "Czechia", d: [
+  FD("Smažený sýr", "Breaded fried cheese with tartar sauce.", 1),
+  FD("Trdelník", "Rolled sweet pastry on a spit."),
+  FD("Ovocné knedlíky", "Fruit dumplings with butter and sugar.")] };
+
+const NONVEG_RE = /\b(meat|meats|chicken|mutton|lamb|goat|beef|veal|pork|bacon|ham|hams|sausages?|salami|pepperoni|chorizo|prosciutto|jam[oó]n|fish|fishes|seafood|prawns?|shrimps?|crabs?|lobsters?|oysters?|squid|calamari|octopus|clams?|mussels?|anchov\w*|tuna|salmon|sardines?|hilsa|ilish|pomfret|bombil|surmai|kingfish|kebabs?|kababs?|kebap|kabob|keema|kheema|tikka|tandoori|haleem|nihari|biryani|biriyani|paya|rogan josh|gosht|wazwan|meen|machher|maach|eel|duck|turkey|venison|steaks?|burgers?|shawarma|doner|gyros?|souvlaki|ribs|wings|liver|tripe|offal|sushi|sashimi|ramen|satay|rendang|dim sum|non-?veg\w*|nonveg\w*|carnivor\w*|grill(?:ed)? meats?|bbq|barbecue|broth|gelatine?|lard)\b/i;
+const VEGWORD_RE = /\b(vegetarian|vegan|veg|pure veg|thali|jain|dosa|idli|chaat|sweets?|dessert|bakery|caf[eé]s?|ice cream|tea|coffee|street food)\b/i;
+const normKey = s => String(s || "").toLowerCase().replace(/\s+district$/, "").replace(/[^a-z& ]/g, " ").replace(/\s+/g, " ").trim();
+function foodFor(addr){
+  if (!addr) return null;
+  const cc = String(addr.country_code || "").toLowerCase();
+  if (cc === "in"){
+    let city = null;
+    for (const f of ["city", "town", "village", "municipality", "city_district", "county", "state_district"]){
+      const k = normKey(addr[f]); const key = FOOD_CITY_ALIAS[k] || k;
+      if (key && FOOD_CITIES[key]){ city = FOOD_CITIES[key]; break; }
+    }
+    const sk = normKey(addr.state), st = FOOD_STATES[FOOD_STATE_ALIAS[sk] || sk] || null;
+    const groups = [];
+    if (city) groups.push({ label: city.n + " specials", dishes: city.d });
+    if (st){
+      const seen = new Set(groups.length ? groups[0].dishes.map(x => x.n.toLowerCase()) : []);
+      const rest = st.d.filter(x => !seen.has(x.n.toLowerCase()));
+      if (rest.length) groups.push({ label: (city ? "Also from " : "Must-try in ") + st.n, dishes: city ? rest.slice(0, 4) : rest });
+    }
+    if (!groups.length) groups.push({ label: "Indian favourites", dishes: FOOD_INDIA.d });
+    return { groups, tip: (city && city.tip) || (st && st.tip) || FOOD_IN_TIP, india: true, area: (city || st || FOOD_INDIA).n };
+  }
+  const c = FOOD_COUNTRIES[cc];
+  if (c) return { groups: [{ label: "Must-try in " + c.n, dishes: c.d }], tip: c.tip || "", india: false, area: c.n };
+  return { groups: [], tip: "", india: false, area: addr.country || "" };
+}
+function wvFood(extract){
+  const secs = parseSections(extract || "");
+  const i = secs.findIndex(s => s.level === 2 && /^eat$/i.test(s.title));
+  if (i < 0) return [];
+  let txt = secs[i].text;
+  for (let j = i + 1; j < secs.length && secs[j].level > 2; j++) txt += "\n" + secs[j].text;
+  const ps = paras(txt).filter(p => !/^=/.test(p) && p.length > 50 && !NONVEG_RE.test(p));
+  return ps.filter(p => VEGWORD_RE.test(p)).concat(ps.filter(p => !VEGWORD_RE.test(p))).slice(0, 5);
+}
+async function fetchVegEats(lat, lon, o){
+  if (lat == null || lon == null) return null;
+  const la = (+lat).toFixed(4), lo = (+lon).toFixed(4), A = "(around:1500," + la + "," + lo + ")";
+  const q = "[out:json][timeout:20];(" +
+    "nwr" + A + '["amenity"~"^(restaurant|cafe|fast_food|food_court|ice_cream)$"]["diet:vegetarian"~"^(only|yes)$"]["name"];' +
+    "nwr" + A + '["amenity"~"^(restaurant|cafe|fast_food)$"]["cuisine"~"vegetarian|vegan",i]["name"];' +
+    "nwr" + A + '["diet:vegan"="only"]["name"];' +
+    ");out tags center 50;";
+  try {
+    const d = await getJSON("https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(q), 25000, o);
+    const seen = new Set(), out = [];
+    (d.elements || []).forEach(e => {
+      const t = e.tags || {}, name = t["name:en"] || t.name;
+      const pla = e.lat != null ? e.lat : e.center && e.center.lat, plo = e.lon != null ? e.lon : e.center && e.center.lon;
+      if (!name || pla == null || seen.has(name.toLowerCase())) return;
+      seen.add(name.toLowerCase());
+      const pure = t["diet:vegetarian"] === "only" || t["diet:vegan"] === "only" || /(^|;)\s*vegetarian\s*(;|$)/i.test(t.cuisine || "") && !/(meat|chicken|fish|seafood|burger|kebab|steak)/i.test(t.cuisine || "");
+      out.push({ name, lat: pla, lon: plo, pure, km: distKm({ lat: +lat, lon: +lon }, { lat: pla, lon: plo }),
+        kind: (t.amenity || "").replace("_", " "), cuisine: (t.cuisine || "").split(";").map(x => x.trim().replace(/_/g, " ")).filter(x => x && !/^(vegetarian|vegan)$/i.test(x)).slice(0, 2).join(", "),
+        oh: t.opening_hours || "" });
+    });
+    out.sort((a, b) => (b.pure - a.pure) || (a.km - b.km));
+    return out.slice(0, 8);
+  } catch(e){ return undefined; }
+}
+function gSearch(q){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q); }
+function renderFood(box, info, eats, wvp, ctx){
+  if (!box) return;
+  const near = ctx.title + (ctx.city && ctx.city !== ctx.title ? ", " + ctx.city : "");
+  let h = '<p class="small muted" style="margin:0 0 8px">Vegetarian picks only — no meat or fish. 🥚 = contains egg.</p>';
+  if (info && info.groups.length){
+    info.groups.forEach(g => {
+      h += '<div class="section-title" style="margin-block-start:6px">' + esc(g.label) + '</div><ul class="food">' +
+        g.dishes.map(x => '<li><div class="fn">' + esc(x.n) + (x.e ? ' <span class="eggb">🥚 egg</span>' : "") + '</div><div class="small muted">' + esc(x.d) + '</div>' +
+          '<a class="small" href="' + esc(gSearch(x.n.replace(/\s*\(.*?\)/g, "") + " near " + near)) + '" target="_blank" rel="noopener">Where to try it →</a></li>').join("") + '</ul>';
+    });
+  } else {
+    h += '<p class="small" style="margin:0 0 8px">I don’t have a curated food list for ' + esc(info && info.area ? info.area : "this area") + ' yet — use the Google Maps search below to find vegetarian food nearby.</p>';
+  }
+  if (info && info.tip) h += '<div class="rec small" style="margin-block:10px">🟢 ' + esc(info.tip) + '</div>';
+  h += '<div class="section-title">Vegetarian-friendly places nearby</div>';
+  if (eats === null) h += '<p class="small muted" style="margin:0">Looking for vegetarian restaurants nearby…</p>';
+  else if (eats && eats.length){
+    h += '<div class="eats">' + eats.map(x => {
+      let st = ""; const p = x.oh ? parseOH(x.oh) : null; if (p) st = ohStatus(p);
+      return '<a class="eat" href="' + esc(gPlace(x.name, x.lat, x.lon, ctx.city)) + '" target="_blank" rel="noopener"><div class="fn">' + esc(x.name) +
+        (x.pure ? ' <span class="vegb">Pure veg</span>' : ' <span class="vegb soft">Veg options</span>') + '</div><div class="small muted">' +
+        esc([fmtDist(x.km), x.cuisine || x.kind].filter(Boolean).join(" · ")) + (st ? " · " + esc(st) : "") + '</div></a>';
+    }).join("") + '</div>';
+  } else {
+    h += '<p class="small muted" style="margin:0">' + (eats === undefined ? "Couldn’t check nearby restaurants right now (weak or no signal)." : "No restaurants within 1.5 km are tagged as vegetarian in OpenStreetMap — try Google Maps below.") + '</p>';
+  }
+  h += '<a class="gbtn" href="' + esc(gSearch((info && info.india ? "pure veg restaurants" : "vegetarian restaurants") + " near " + near)) + '" target="_blank" rel="noopener">🟢 Find ' + (info && info.india ? "pure-veg" : "vegetarian") + ' restaurants on Google Maps</a>';
+  if (wvp && wvp.length){
+    h += '<details class="wv" style="margin-block-start:10px"><summary>Local food notes · ' + esc(ctx.wvTitle) + '</summary><div class="prose" style="margin-block-start:6px">' +
+      wvp.map(p => '<p>' + esc(trimToSentences(p, 420)) + '</p>').join("") + '<p class="small muted">From Wikivoyage. Notes that mention meat or fish are hidden.</p></div></details>';
+  }
+  h += '<p class="small muted" style="margin:10px 0 0">Recipes vary between kitchens. If you’re unsure, ask: “Is this pure veg — no meat, fish, fish sauce or gelatin?”</p>';
+  box.innerHTML = h;
+}
+
 /* ---------------- map view (Leaflet + OpenStreetMap) ---------------- */
 const LEAFLET = {
   css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css", cssSri: "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=",
@@ -1404,6 +2056,7 @@ async function downloadPlace(p){
   const addr = res[1];
   await fetchWikivoyage([art.title, cityOf(addr), addr && addr.state_district, addr && addr.state], art.title, o);
   await fetchHours(art.qid, lat, lon, art.title, o);
+  await fetchVegEats(lat, lon, o);
   const pics = await fetchGallery(art, o).catch(() => []);
   const imgs = [p.thumb, art.image].concat(pics.slice(0, 4).map(g => g.thumb));
   for (const u of Array.from(new Set(imgs.filter(Boolean)))) await pinImage(u, o);
